@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0D1E36">
+<title>Gestion des absences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F6;
+  --surface:#FFFFFF;
+  --ink:#182634;
+  --ink-muted:#647082;
+  --border:#E4E9EF;
+  --primary:#1B3358;
+  --primary-dark:#0D1E36;
+  --primary-tint:#E8EDF6;
+  --gold:#B4862B;
+  --gold-tint:#FBF3E3;
+  --present:#157A4A;
+  --present-tint:#E3F5EC;
+  --absent:#B4231E;
+  --absent-tint:#FCE9E8;
+  --radius-s:10px;
+  --radius-m:16px;
+  --radius-l:22px;
+  --shadow:0 1px 2px rgba(13,25,45,.05),0 8px 22px rgba(13,25,45,.07);
+  --shadow-lift:0 4px 10px rgba(13,25,45,.14),0 16px 34px rgba(13,25,45,.14);
+  --mono:ui-monospace,SFMono-Regular,'IBM Plex Mono',Menlo,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --sans-ar:'Tajawal','Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(560px 280px at 90% -6%, rgba(27,51,88,.06), transparent 60%),
+    var(--bg);
+  color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+html[lang="ar"] body{font-family:var(--sans-ar);}
+button,input,select{font-family:inherit;}
+.hidden{display:none !important;}
+#app{max-width:900px;margin:0 auto;padding:0 0 56px;}
+
+/* ---------- Top nav links ---------- */
+.top-links{
+  display:flex;flex-direction:column;gap:8px;margin-top:14px;
+}
+.top-link-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:linear-gradient(135deg,var(--gold) 0%,#8f6a1e 100%);
+  border:1px solid rgba(255,255,255,.35);
+  color:#fff;border-radius:999px;
+  padding:10px 12px;font-size:.82rem;font-weight:800;
+  text-decoration:none;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(180,134,43,.45);
+  transition:filter .15s ease,transform .06s ease;
+}
+.top-link-btn:hover{filter:brightness(1.08);}
+.top-link-btn:active{transform:scale(.97);}
+.top-link-btn .icon{font-size:1.05rem;line-height:1;}
+
+/* ---------- Header ---------- */
+.topbar{
+  background:var(--primary-dark);
+  color:#fff;padding:18px 18px 20px;
+  position:sticky;top:0;z-index:20;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.topbar-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.school-badge{display:flex;align-items:center;gap:9px;min-width:0;animation:badgeFloat 3.4s ease-in-out infinite;}
+@keyframes badgeFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-3px);}
+}
+.school-emoji{
+  flex-shrink:0;display:flex;align-items:center;color:var(--gold);
+  animation:emojiGlow 3.4s ease-in-out infinite;
+}
+.school-emoji svg{display:block;}
+@keyframes emojiGlow{
+  0%,100%{filter:drop-shadow(0 0 0 rgba(180,134,43,0));}
+  50%{filter:drop-shadow(0 0 4px rgba(180,134,43,.65));}
+}
+.school-name{
+  font-size:.82rem;font-weight:700;letter-spacing:.15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background:linear-gradient(100deg,#fff 30%,var(--gold) 50%,#fff 70%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-fill-color:transparent;
+  animation:nameShine 4.5s ease-in-out infinite;
+}
+@supports not (background-clip:text){
+  .school-name{color:#fff;background:none;-webkit-text-fill-color:#fff;}
+}
+@keyframes nameShine{
+  0%{background-position:120% 0;}
+  55%,100%{background-position:-40% 0;}
+}
+@media (prefers-reduced-motion:reduce){
+  .school-badge,.school-emoji,.school-name{animation:none;}
+}
+.lang-switch{display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px;flex-shrink:0;border:1px solid rgba(255,255,255,.12);}
+.lang-switch button{background:transparent;border:none;color:rgba(255,255,255,.75);font-weight:800;font-size:.72rem;padding:6px 13px;border-radius:999px;cursor:pointer;letter-spacing:.04em;transition:background .15s ease,color .15s ease;}
+.lang-switch button.active{background:#fff;color:var(--primary-dark);box-shadow:0 2px 6px rgba(0,0,0,.18);}
+.topbar h1{margin:0;font-size:1.3rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;letter-spacing:-.01em;}
+.topbar p{margin:6px 0 0;font-size:.85rem;color:rgba(255,255,255,.7);text-align:center;}
+.header-title-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+.reports-btn{
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:linear-gradient(135deg,var(--gold) 0%,#8f6a1e 100%);
+  border:1px solid rgba(255,255,255,.35);
+  color:#fff;border-radius:999px;padding:11px 19px;font-size:.9rem;font-weight:800;
+  cursor:pointer;transition:filter .15s ease,transform .06s ease,box-shadow .15s ease;
+  text-decoration:none;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(180,134,43,.45),0 0 0 0 rgba(180,134,43,.55);
+  animation:reportsPulse 2.6s ease-in-out infinite;
+}
+.reports-btn:hover{filter:brightness(1.08);}
+.reports-btn:active{transform:scale(.96);}
+.reports-btn .icon{font-size:1.25rem;line-height:1;}
+@keyframes reportsPulse{
+  0%,100%{box-shadow:0 3px 10px rgba(180,134,43,.45),0 0 0 0 rgba(180,134,43,.45);}
+  50%{box-shadow:0 3px 10px rgba(180,134,43,.45),0 0 0 6px rgba(180,134,43,0);}
+}
+@media (prefers-reduced-motion:reduce){
+  .reports-btn{animation:none;}
+}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--surface);margin:14px;padding:19px;
+  border-radius:var(--radius-l);box-shadow:var(--shadow);
+  border:1px solid rgba(13,25,45,.04);
+  animation:riseIn .45s ease both;
+}
+#app > .card:first-of-type{animation-delay:.05s;}
+#app > .card:nth-of-type(2){animation-delay:.12s;}
+@keyframes riseIn{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.card h2{margin:0 0 15px;font-size:.98rem;font-weight:800;color:var(--primary-dark);display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
+.card h2 .sub{display:block;font-weight:500;font-size:.76rem;color:var(--ink-muted);width:100%;margin-top:1px;}
+#courseInfoTitle::before{content:"🗓️";font-size:.92em;}
+#studentsTitleText::before{content:"🧑‍🎓";font-size:.92em;}
+
+/* ---------- Course info form ---------- */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field.full{grid-column:1 / -1;}
+.field-label{font-size:.74rem;color:var(--ink-muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.field input,.field select{
+  border:1.5px solid var(--border);border-radius:var(--radius-s);
+  padding:10px 12px;font-size:.92rem;background:#fff;color:var(--ink);width:100%;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.field input:disabled{background:var(--primary-tint);color:var(--primary-dark);font-family:var(--mono);font-weight:700;border-color:var(--primary-tint);}
+.field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,51,88,.13);}
+
+/* ---------- Student search / counts ---------- */
+.search-box{
+  display:flex;align-items:center;gap:8px;border:1.5px solid var(--border);
+  border-radius:999px;padding:9px 15px;margin-bottom:14px;background:#F9FAFC;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+.search-box:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,51,88,.13);background:#fff;}
+.search-box input{border:none;background:transparent;flex:1;font-size:.9rem;color:var(--ink);}
+.search-box input:focus{outline:none;}
+
+.count-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;}
+.count-pill{
+  flex:1;min-width:90px;text-align:center;padding:11px 6px;border-radius:var(--radius-m);
+  background:var(--primary-tint);color:var(--primary-dark);border:1px solid rgba(27,51,88,.06);
+}
+.count-pill.count-absent{background:var(--absent-tint);color:var(--absent);border-color:rgba(180,35,30,.08);}
+.count-pill.count-present{background:var(--present-tint);color:var(--present);border-color:rgba(21,122,74,.08);}
+.count-pill b{display:block;font-size:1.28rem;font-family:var(--mono);letter-spacing:-.02em;}
+.count-pill span{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;opacity:.85;}
+
+.bulk-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.btn{
+  border-radius:999px;padding:10px 16px;font-size:.85rem;font-weight:700;
+  border:none;display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  transition:transform .06s ease,box-shadow .15s ease,filter .15s ease,background .15s ease;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;box-shadow:0 6px 16px rgba(27,51,88,.32);}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-primary:disabled{background:#A6AFBB;box-shadow:none;cursor:not-allowed;filter:none;}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--border);}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+.btn-ghost.red{color:var(--absent);}
+.btn-ghost.red:hover{border-color:var(--absent);}
+.btn-ghost.green{color:var(--present);}
+.btn-block{width:100%;justify-content:center;padding:15px;font-size:.96rem;border-radius:var(--radius-m);}
+
+/* ---------- Student list ---------- */
+.student-list{display:grid;grid-template-columns:1fr;gap:8px;}
+.student-card{
+  display:flex;align-items:center;gap:11px;border:1.5px solid var(--border);
+  border-radius:var(--radius-m);padding:10px 12px;cursor:pointer;
+  background:#fff;transition:background .12s ease,border-color .12s ease,transform .06s ease;
+}
+.student-card:hover{border-color:#c3ccd8;transform:translateY(-1px);}
+.student-card:active{transform:translateY(0);}
+.student-card.is-reported{background:var(--gold-tint);border-color:rgba(180,134,43,.35);}
+.student-card.is-reported .s-rank{color:var(--gold);}
+.student-card.is-reported .s-avatar{background:#fff;color:var(--gold);}
+.student-card.is-reported .s-num{background:#fff;color:var(--gold);}
+.student-card.is-absent{background:var(--absent-tint);border-color:rgba(180,35,30,.35);}
+.student-card input[type=checkbox]{width:19px;height:19px;flex-shrink:0;accent-color:var(--absent);}
+.s-rank{
+  flex-shrink:0;min-width:20px;text-align:center;font-family:var(--mono);
+  font-size:.75rem;font-weight:700;color:var(--ink-muted);
+}
+.student-card.is-absent .s-rank{color:var(--absent);}
+.s-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  background:var(--primary-tint);color:var(--primary-dark);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;
+}
+.student-card.is-absent .s-avatar{background:#fff;color:var(--absent);}
+.student-card .s-name{flex:1;font-size:.92rem;font-weight:600;}
+.student-card .s-num{font-family:var(--mono);font-size:.75rem;color:var(--ink-muted);background:var(--bg);padding:3px 8px;border-radius:7px;}
+.student-card.is-absent .s-num{background:#fff;color:var(--absent);}
+.s-referral{color:var(--absent);font-size:.72rem;font-weight:800;white-space:nowrap;flex-shrink:0;}
+.s-report{color:var(--present);font-size:.72rem;font-weight:800;white-space:nowrap;flex-shrink:0;}
+.s-flags{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.empty-state,.loading-state{text-align:center;color:var(--ink-muted);padding:32px 12px;font-size:.86rem;}
+.data-loading,.referral-loading{
+  display:none;align-items:center;gap:8px;color:var(--ink-muted);font-size:.76rem;font-weight:700;
+}
+.data-loading.show,.referral-loading.show{display:flex;}
+.data-loading{justify-content:center;padding:6px 0 12px;}
+.referral-loading{margin-inline-start:auto;font-size:.68rem;font-weight:600;white-space:nowrap;}
+.loading-spinner{
+  width:15px;height:15px;flex:0 0 15px;border:2px solid var(--primary-tint);
+  border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;
+}
+
+/* ---------- Save section ---------- */
+.save-bar{margin:16px 14px 0;display:flex;flex-direction:column;gap:10px;}
+.msg{
+  border-radius:var(--radius-s);padding:12px 15px;font-size:.85rem;font-weight:700;
+  display:none;border:1px solid transparent;
+}
+.msg.show{display:block;animation:riseIn .25s ease both;}
+.msg.msg-error{background:var(--absent-tint);color:var(--absent);border-color:rgba(180,35,30,.14);}
+.msg.msg-success{background:var(--present-tint);color:var(--present);border-color:rgba(21,122,74,.14);}
+.spinner{
+  width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.app-footer{text-align:center;padding:22px 18px 8px;font-size:.74rem;color:var(--ink-muted);}
+.app-footer::before{content:"";display:block;width:34px;height:3px;border-radius:3px;background:var(--gold);margin:0 auto 10px;}
+
+@media (min-width:640px){
+  .student-list{grid-template-columns:1fr 1fr;}
+}
+@media (min-width:860px){
+  .field-grid{grid-template-columns:repeat(3,1fr);}
+  .field.full{grid-column:auto;}
+}
+
+/* ---------- Mobile refinement ---------- */
+html,body{overflow-x:hidden;}
+button,input,select{touch-action:manipulation;}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(180,134,43,.55);outline-offset:2px;}
+
+@media (max-width:639px){
+  body{font-size:14px;}
+  #app{width:100%;padding-bottom:calc(28px + env(safe-area-inset-bottom));}
+
+  .topbar{
+    padding:12px 12px 15px;
+    position:relative;
+  }
+  .topbar-top{gap:8px;margin-bottom:11px;}
+  .school-badge{gap:7px;min-width:0;}
+  .school-emoji svg{width:18px;height:18px;}
+  .school-name{font-size:.72rem;}
+  .lang-switch button{min-width:44px;padding:7px 10px;font-size:.7rem;}
+  .header-title-row{align-items:flex-start;gap:9px;}
+  .topbar h1{min-width:0;font-size:1.08rem;line-height:1.3;}
+  .reports-btn{padding:9px 11px;font-size:.72rem;gap:4px;}
+  .reports-btn .icon{font-size:1.05rem;}
+  .topbar p{margin-top:5px;font-size:.76rem;line-height:1.45;}
+
+  .card{margin:10px;padding:14px;border-radius:16px;}
+  .card h2{margin-bottom:12px;font-size:.92rem;line-height:1.35;}
+  .card h2 .sub{font-size:.72rem;line-height:1.4;}
+  .field-grid{grid-template-columns:1fr;gap:10px;}
+  .field.full{grid-column:auto;}
+  .field{gap:4px;}
+  .field-label{font-size:.67rem;}
+  .field input,.field select{min-height:44px;padding:10px 11px;font-size:.88rem;}
+
+  .search-box{min-height:44px;margin-bottom:11px;padding:8px 12px;}
+  .search-box input{min-width:0;font-size:.88rem;}
+  .count-row{gap:6px;margin-bottom:12px;}
+  .count-pill{min-width:0;padding:8px 3px;border-radius:12px;}
+  .count-pill b{font-size:1.08rem;}
+  .count-pill span{font-size:.6rem;letter-spacing:0;}
+  .bulk-actions{gap:7px;margin-bottom:12px;}
+  .bulk-actions .btn{flex:1;justify-content:center;min-height:42px;padding:9px 8px;font-size:.76rem;}
+
+  .student-list{gap:7px;}
+  .referral-loading{font-size:.62rem;}
+  .student-card{gap:8px;min-height:50px;padding:9px 8px;border-radius:13px;}
+  .student-card input[type=checkbox]{width:20px;height:20px;}
+  .s-rank{min-width:17px;font-size:.68rem;}
+  .s-avatar{width:28px;height:28px;font-size:.72rem;}
+  .student-card .s-name{min-width:0;font-size:.82rem;line-height:1.35;overflow-wrap:anywhere;}
+  .student-card .s-num{font-size:.65rem;padding:3px 5px;}
+  .s-flags{max-width:112px;}
+  .s-referral,.s-report{font-size:.62rem;white-space:normal;text-align:end;line-height:1.2;}
+
+  .save-bar{margin:12px 10px 0;gap:8px;}
+  .btn-block{min-height:50px;padding:13px 12px;font-size:.88rem;}
+  .msg{padding:10px 12px;font-size:.78rem;line-height:1.5;overflow-wrap:anywhere;}
+  .app-footer{padding:18px 14px 6px;font-size:.68rem;line-height:1.45;}
+}
+
+@media (max-width:380px){
+  .school-name{max-width:145px;}
+  .topbar h1{font-size:1rem;}
+  .reports-btn{padding-inline:9px;font-size:.67rem;}
+  .reports-btn .icon{display:none;}
+  .student-card .s-num{display:none;}
+  .s-flags{max-width:92px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto !important;animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}
+</style>
+</head>
+<body>
+<div id="lockScreen" style="position:fixed;inset:0;z-index:999;background:linear-gradient(160deg,#0D1E36 0%,#1B3358 100%);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Tajawal','Inter',sans-serif;">
+  <div style="background:#fff;border-radius:22px;box-shadow:0 20px 50px rgba(13,25,45,.35);padding:32px 26px;max-width:360px;width:100%;text-align:center;">
+    <div style="font-size:2.2rem;margin-bottom:6px;">🔒</div>
+    <h2 id="lockTitle" style="margin:0 0 4px;color:#182634;font-size:1.05rem;font-weight:800;">دخول محمي / Accès protégé</h2>
+    <p id="lockSubtitle" style="margin:0 0 18px;color:#647082;font-size:.82rem;">أدخل كلمة المرور للمتابعة / Entrez le mot de passe</p>
+    <input id="lockPasswordInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="••••••••" style="width:100%;border:1.5px solid #E4E9EF;border-radius:10px;padding:12px 14px;font-size:1rem;text-align:center;letter-spacing:.15em;color:#182634;box-sizing:border-box;margin-bottom:10px;-webkit-text-security:disc;text-security:disc;" autofocus>
+    <p id="lockError" style="display:none;color:#B4231E;font-size:.78rem;margin:0 0 12px;">❌ كلمة مرور خاطئة / Mot de passe incorrect</p>
+    <button id="lockSubmitBtn" style="width:100%;background:linear-gradient(135deg,#1B3358 0%,#0D1E36 100%);color:#fff;border:none;border-radius:999px;padding:13px;font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(27,51,88,.32);">دخول / Entrer</button>
+  </div>
+</div>
+<script>
+(function(){
+  var CORRECT_PASSWORD = "20262027";
+  var UNLOCK_KEY = "appUnlocked_v1";
+  var lockScreen = document.getElementById("lockScreen");
+
+  // Already unlocked on this device/browser? Skip the prompt entirely.
+  if(localStorage.getItem(UNLOCK_KEY) === "1"){
+    lockScreen.remove();
+    return;
+  }
+
+  var input = document.getElementById("lockPasswordInput");
+  var btn = document.getElementById("lockSubmitBtn");
+  var err = document.getElementById("lockError");
+
+  function tryUnlock(){
+    if(input.value === CORRECT_PASSWORD){
+      try{ localStorage.setItem(UNLOCK_KEY, "1"); }catch(e){ /* storage unavailable */ }
+      lockScreen.remove();
+      document.body.style.overflow = "";
+    } else {
+      err.style.display = "block";
+      input.value = "";
+      input.focus();
+    }
+  }
+  btn.addEventListener("click", tryUnlock);
+  input.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ tryUnlock(); }
+  });
+  document.body.style.overflow = "hidden";
+})();
+</script>
+<div id="app">
+
+  <header class="topbar">
+    <div class="topbar-top">
+      <div class="school-badge">
+        <span class="school-emoji" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L1.5 8.25L12 13.5L22.5 8.25L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M5.5 10.7V16C5.5 16 8 18.5 12 18.5C16 18.5 18.5 16 18.5 16V10.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22.5 8.25V15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="school-name" id="schoolNameLabel"></span>
+      </div>
+      <div class="lang-switch">
+        <button type="button" id="langFr">FR</button>
+        <button type="button" id="langAr">AR</button>
+      </div>
+    </div>
+    <div class="header-title-row">
+      <h1 id="headerTitle"></h1>
+    </div>
+    <p id="headerSubtitle"></p>
+    <div class="top-links">
+      <a class="top-link-btn" id="reportsBtn" href="dashboard.html">
+        <span class="icon">🚦</span><span id="reportsBtnLabel"></span>
+      </a>
+      <a class="top-link-btn" href="index1.html"><span class="icon">📊</span><span>لوحة تحكم</span></a>
+      <a class="top-link-btn" href="index2.html"><span class="icon">🧑‍🏫</span><span>فضاء الاستاذ(ة)</span></a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2 id="courseInfoTitle"></h2>
+    <div class="field-grid">
+      <div class="field">
+        <label class="field-label" id="dateLabel" for="dateField"></label>
+        <input type="text" id="dateField" disabled>
+      </div>
+      <div class="field">
+        <label class="field-label" id="sessionTypeLabel" for="sessionTypeField"></label>
+        <select id="sessionTypeField">
+          <option value="single"></option>
+          <option value="double"></option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" id="periodLabel" for="periodField"></label>
+        <select id="periodField">
+          <option value="">— —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" id="teacherLabel" for="teacherField"></label>
+        <select id="teacherField">
+          <option value="">— —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" id="subjectLabel" for="subjectField"></label>
+        <select id="subjectField">
+          <option value="">— —</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label class="field-label" id="classLabel" for="classField"></label>
+        <select id="classField">
+          <option value="">— —</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>
+      <span id="studentsTitleText"></span>
+      <span class="sub" id="classSubLabel"></span>
+      <span class="referral-loading" id="referralLoading" role="status" aria-live="polite">
+        <span class="loading-spinner" aria-hidden="true"></span><span id="referralLoadingLabel"></span>
+      </span>
+    </h2>
+
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" id="searchField" placeholder="" disabled>
+    </div>
+
+    <div class="count-row">
+      <div class="count-pill"><b id="countTotal">0</b><span id="totalLabel"></span></div>
+      <div class="count-pill count-absent"><b id="countAbsent">0</b><span id="absentLabelSpan"></span></div>
+      <div class="count-pill count-present"><b id="countPresent">0</b><span id="presentLabelSpan"></span></div>
+    </div>
+
+    <div class="bulk-actions">
+      <button class="btn btn-ghost red" id="selectAllBtn" type="button"></button>
+      <button class="btn btn-ghost" id="selectNoneBtn" type="button"></button>
+    </div>
+
+    <div class="data-loading" id="dataLoading" role="status" aria-live="polite">
+      <span class="loading-spinner" aria-hidden="true"></span><span id="dataLoadingLabel"></span>
+    </div>
+    <div class="student-list" id="studentList">
+      <div class="empty-state" id="initialEmptyState"></div>
+    </div>
+  </section>
+
+  <div class="save-bar">
+    <div class="msg" id="statusMsg"></div>
+    <button class="btn btn-primary btn-block" id="saveBtn" type="button"></button>
+  </div>
+
+  <footer class="app-footer" id="appFooter"></footer>
+  <div class="app-footer" style="padding-top:0;">© 2026 — | Développé par OUCHEN MOHAMED</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ Configuration (facilement modifiable) ============ */
+const API_URL = "https://script.google.com/macros/s/AKfycbw200ecfACgF0l2Cv4m7cq4VrvA5O80lVRjfHJ5aCbqAu5ab-hv3hCUlL_2hrnL8qGbAA/exec";
+const ATTENDANCE_SHEET = "DATA";
+const STUDENTS_SHEET = "Sheet2";
+/* Lien vers Sheet3 (تقارير سلوك التلاميذ) — même source que dashboard.html.
+   Sert uniquement à afficher un badge "تقرير" sur l'élève concerné ; ne modifie rien. */
+const API_URL_SHEET3 = "https://script.google.com/macros/s/AKfycbw200ecfACgF0l2Cv4m7cq4VrvA5O80lVRjfHJ5aCbqAu5ab-hv3hCUlL_2hrnL8qGbAA/exec";
+/* Statuts de rapport considérés comme "clos" (n'affichent plus le badge) */
+const REPORT_CLOSED_STATUSES = ["مغلق"];
+
+/* Seuil (en heures d'absence cumulées) au-delà duquel l'élève est signalé à l'administration.
+   Un(e) admin peut désactiver ce signalement pour un élève en écrivant "NON" (insensible à la casse/espaces)
+   dans la colonne N° (colonne H) de la DERNIÈRE ligne d'absence de cet élève dans la feuille DATA. */
+const REFERRAL_HOURS_THRESHOLD = 1;
+
+const PERIODS_SINGLE = [
+  "08:00 - 09:00","09:00 - 10:00","10:00 - 11:00","11:00 - 12:00",
+  "14:00 - 15:00","15:00 - 16:00","16:00 - 17:00","17:00 - 18:00"
+];
+const PERIODS_DOUBLE = [
+  "08:00 - 10:00","10:00 - 12:00","14:00 - 16:00","16:00 - 18:00"
+];
+/* Nombre d'heures d'absence enregistrées selon le type de séance choisi */
+const SESSION_HOURS = { single: 1, double: 2 };
+function currentPeriodsList(){
+  return currentSessionType === "double" ? PERIODS_DOUBLE : PERIODS_SINGLE;
+}
+
+/* Colonnes reconnues automatiquement (FR / EN / AR) */
+const CLASS_COLUMN_ALIASES = ["classe","section","class","القسم","الشعبة","الفوج"];
+const NAME_COLUMN_ALIASES = ["nom","nom et prenom","nom et prénom","eleve","élève","student","student name","name","الاسم","الاسم الكامل","التلميذ","اسم التلميذ"];
+const NUM_COLUMN_ALIASES = ["n°","numero","numéro","id","student id","رقم","رقم التلميذ","num"];
+const TEACHER_COLUMN_ALIASES = ["professeur","professeure","teacher","enseignant","enseignante","الأستاذ","الاستاذ","الأستاذة","المعلم","المدرس"];
+const SUBJECT_COLUMN_ALIASES = ["matiere","matière","subject","المادة","مادة"];
+
+/* ============ Translations (UI text only — no business logic changes) ============ */
+const translations = {
+  fr: {
+    schoolName: "Collège Assaiss Agadir",
+    pageTitle: "Gestion des absences",
+    headerTitle: "📋 Gestion des absences",
+    headerSubtitle: "Enregistrement quotidien des absences des élèves",
+    reportsBtn: "Rédiger les rapports de comportement",
+    reportsBtnTitle: "Créer des rapports sur le comportement de l'élève",
+    courseInfo: "Informations du cours",
+    date: "Date",
+    sessionType: "Type de séance",
+    sessionTypeSingle: "Séance unique (1h)",
+    sessionTypeDouble: "Deux séances consécutives (2h)",
+    period: "Horaire",
+    choose: "— Choisir —",
+    teacher: "Professeur / Professeure",
+    loadingTeachers: "— Chargement… —",
+    subject: "Matière",
+    chooseTeacher: "— Choisir un professeur —",
+    chooseTeacherFirst: "— Choisir un professeur d'abord —",
+    noSubjectForTeacher: "Aucune matière associée à ce professeur",
+    noTeacherFound: "Aucun professeur trouvé dans Sheet2",
+    classSection: "Classe / Section",
+    loadingClasses: "— Chargement des classes… —",
+    chooseClass: "— Choisir une classe —",
+    noClassFound: "Aucune classe trouvée",
+    noClassDetected: "Aucune classe détectée",
+    loadingError: "Erreur de chargement",
+    studentsOfClass: "Élèves de la classe",
+    subLabelDefault: "Sélectionnez une classe pour afficher les élèves",
+    emptyNoClass: "Sélectionnez une classe pour afficher les élèves.",
+    searchPlaceholder: "Rechercher un élève...",
+    totalStudents: "Total élèves",
+    absentLabel: "Absents",
+    presentLabel: "Présents",
+    selectAll: "Sélectionner tout",
+    selectNone: "Désélectionner tout",
+    noStudentFound: "Aucun élève trouvé.",
+    saveBtn: "✓ Enregistrer les absences",
+    savingBtn: "Enregistrement en cours...",
+    loadingStudents: "Chargement des élèves…",
+    loadingReferral: "Mise à jour des orientations…",
+    footer: "Connecté directement à Google Sheets via Apps Script",
+    errNoClass: "⚠ Veuillez sélectionner une classe.",
+    errNoPeriod: "⚠ Veuillez sélectionner un horaire.",
+    errNoTeacher: "⚠ Veuillez sélectionner un professeur.",
+    errNoSubject: "⚠ Veuillez sélectionner une matière.",
+    errNoAbsent: "⚠ Veuillez sélectionner au moins un élève absent.",
+    duplicateConfirm: "⚠ Des absences pour cette date, cet horaire, cette matière et cette classe semblent déjà enregistrées.\n\nVoulez-vous quand même enregistrer ?",
+    saveSuccess: (n, h)=> "✓ " + n + " absence(s) enregistrée(s) avec succès (" + h + " heure(s) au total).",
+    saveError: "❌ Impossible d'enregistrer les absences. Vérifiez votre connexion Internet.",
+    sheetNotFound: (name)=> '❌ La feuille "' + name + '" est introuvable dans Google Sheets. Vérifiez le nom exact de l\'onglet (respecte les majuscules) et corrigez la constante STUDENTS_SHEET dans le code.',
+    sheetDbRefused: (code)=> '❌ SheetDB a refusé la requête (code ' + code + '). Cela peut venir du plan SheetDB (fonction "plusieurs feuilles" ou quota de requêtes) ou d\'une restriction CORS/IP sur votre API. Vérifiez les paramètres de votre compte SheetDB.',
+    sheetDbError: (code)=> '❌ SheetDB a renvoyé une erreur (code ' + code + '). Vérifiez la configuration de votre API SheetDB.',
+    noRowsFound: (name)=> '⚠ La feuille "' + name + '" a répondu mais ne contient aucune ligne exploitable. Vérifiez que la feuille contient des données sous les en-têtes.',
+    noClassDetectedMsg: (n, keys)=> '⚠ Des lignes ont été reçues (' + n + ') mais aucune colonne "classe" ou "élève" n\'a été reconnue. Colonnes trouvées : ' + keys + '. Renommez vos colonnes ou ajoutez leur libellé dans CLASS_COLUMN_ALIASES / NAME_COLUMN_ALIASES.',
+    loadError: "❌ Impossible de contacter SheetDB. Vérifiez votre connexion Internet, ou consultez la console du navigateur (F12) pour le détail de l'erreur.",
+    studentsCount: (className, n)=> className + " · " + n + " élève(s)",
+    referralBadge: "🔴 Orienté vers l'administration",
+    reportBadge: "⚠️ A un rapport de comportement"
+  },
+  ar: {
+    schoolName: "الثانوية الاعدادية أسايس أكادير",
+    pageTitle: "تسجيل الغيابات",
+    headerTitle: "📋 تسجيل الغيابات",
+    headerSubtitle: "التسجيل اليومي لغيابات التلاميذ",
+    reportsBtn: "تحرير تقرير",
+    reportsBtnTitle: "إنشاء تقارير حول سلوك التلميذ(ة)",
+    courseInfo: "معلومات الحصة",
+    date: "التاريخ",
+    sessionType: "نوع الحصة",
+    sessionTypeSingle: "حصة واحدة",
+    sessionTypeDouble: "حصتان متتاليتان",
+    period: "التوقيت",
+    choose: "— اختر —",
+    teacher: "الأستاذ(ة)",
+    loadingTeachers: "— جاري التحميل… —",
+    subject: "المادة",
+    chooseTeacher: "— اختر أستاذا(ة) —",
+    chooseTeacherFirst: "— اختر أستاذا(ة) أولا —",
+    noSubjectForTeacher: "لا توجد مادة مرتبطة بهذا الأستاذ",
+    noTeacherFound: "لم يتم العثور على أي أستاذ في Sheet2",
+    classSection: "القسم / الشعبة",
+    loadingClasses: "— جاري تحميل الأقسام… —",
+    chooseClass: "— اختر قسما —",
+    noClassFound: "لم يتم العثور على أي قسم",
+    noClassDetected: "لم يتم التعرف على أي قسم",
+    loadingError: "خطأ في التحميل",
+    studentsOfClass: "تلاميذ القسم",
+    subLabelDefault: "اختر قسما لعرض التلاميذ",
+    emptyNoClass: "اختر قسما لعرض التلاميذ.",
+    searchPlaceholder: "البحث عن تلميذ...",
+    totalStudents: "مجموع التلاميذ",
+    absentLabel: "الغائبون",
+    presentLabel: "الحاضرون",
+    selectAll: "تحديد الكل",
+    selectNone: "إلغاء تحديد الكل",
+    noStudentFound: "لم يتم العثور على أي تلميذ.",
+    saveBtn: "✓ تسجيل الغيابات",
+    savingBtn: "جارٍ التسجيل...",
+    loadingStudents: "جاري تحميل التلاميذ…",
+    loadingReferral: "جاري تحديث بيانات التوجيه…",
+    footer: "متصل مباشرة بـ Google Sheets عبر Apps Script",
+    errNoClass: "⚠ الرجاء اختيار قسم.",
+    errNoPeriod: "⚠ الرجاء اختيار توقيت.",
+    errNoTeacher: "⚠ الرجاء اختيار أستاذ(ة).",
+    errNoSubject: "⚠ الرجاء اختيار مادة.",
+    errNoAbsent: "⚠ الرجاء اختيار تلميذ غائب واحد على الأقل.",
+    duplicateConfirm: "⚠ يبدو أن غيابات هذا التاريخ والتوقيت والمادة والقسم مسجلة بالفعل.\n\nهل تريد المتابعة رغم ذلك؟",
+    saveSuccess: (n, h)=> "✓ تم تسجيل " + n + " غياب(ات) بنجاح (" + h + " ساعة إجمالاً).",
+    saveError: "❌ تعذر تسجيل الغيابات. تحقق من اتصالك بالإنترنت.",
+    sheetNotFound: (name)=> '❌ الورقة "' + name + '" غير موجودة في Google Sheets. تحقق من الاسم الدقيق لعلامة التبويب (يراعي حالة الأحرف) وصحح الثابت STUDENTS_SHEET في الكود.',
+    sheetDbRefused: (code)=> '❌ رفض SheetDB الطلب (رمز ' + code + '). قد يكون هذا بسبب خطة SheetDB (ميزة "عدة أوراق" أو حصة الطلبات) أو قيد CORS/IP على واجهتك البرمجية. تحقق من إعدادات حساب SheetDB الخاص بك.',
+    sheetDbError: (code)=> '❌ أعاد SheetDB خطأ (رمز ' + code + '). تحقق من إعدادات واجهة SheetDB البرمجية.',
+    noRowsFound: (name)=> '⚠ استجابت الورقة "' + name + '" لكنها لا تحتوي على أي سطر قابل للاستخدام. تحقق من وجود بيانات أسفل رؤوس الأعمدة.',
+    noClassDetectedMsg: (n, keys)=> '⚠ تم استلام أسطر (' + n + ') لكن لم يتم التعرف على أي عمود "قسم" أو "تلميذ". الأعمدة الموجودة: ' + keys + '. أعد تسمية أعمدتك أو أضف تسمياتها إلى CLASS_COLUMN_ALIASES / NAME_COLUMN_ALIASES.',
+    loadError: "❌ تعذر الاتصال بـ SheetDB. تحقق من اتصالك بالإنترنت، أو راجع console المتصفح (F12) لمزيد من التفاصيل.",
+    studentsCount: (className, n)=> className + " · " + n + " تلميذ(ة)",
+    referralBadge: "🔴 موجه إلى الإدارة",
+    reportBadge: "⚠️ لديه تقرير سلوك"
+  }
+};
+
+/* ============ State ============ */
+let allStudents = [];      // [{name, num, className}]
+let classNames = [];       // sorted unique class list
+let currentClass = "";
+let currentSessionType = "single"; // "single" = 1h, "double" = 2h consecutive
+let currentSearch = "";
+let absentByClass = {};    // { className: Set(studentKey) }
+let teacherSubjects = {};  // { teacherName: [subject, ...] }
+let teacherClasses = {};   // { teacherName: [className, ...] }
+let teacherNames = [];     // sorted unique teacher list
+let allSubjects = [];      // sorted unique subject list (fallback / no teacher selected)
+let currentLang = localStorage.getItem("appLang") === "ar" ? "ar" : "fr";
+let isSaving = false;
+let referralInfo = {};     // { "normalizedName|normalizedClass": { totalHours, disabled } } — computed from DATA
+let reportsInfo = {};      // { "normalizedName|normalizedClass": { hasOpenReport, count } } — computed from Sheet3 (dashboard)
+
+function t(){ return translations[currentLang]; }
+
+/* ============ Helpers ============ */
+function $(id){ return document.getElementById(id); }
+
+function setLoading(id, visible){
+  const el = $(id);
+  if(el) el.classList.toggle("show", !!visible);
+}
+
+function escapeHtml(str){
+  if(str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function normalizeKey(str){
+  return String(str || "").trim().toLowerCase();
+}
+
+function pad2(n){ return n < 10 ? "0"+n : ""+n; }
+
+function todayFR(){
+  const d = new Date();
+  return pad2(d.getDate())+"/"+pad2(d.getMonth()+1)+"/"+d.getFullYear();
+}
+
+function studentKey(s){
+  return (s.num ? s.num+"|" : "") + s.name;
+}
+
+function getAbsentSet(className){
+  if(!absentByClass[className]) absentByClass[className] = new Set();
+  return absentByClass[className];
+}
+
+/* ============ Referral to administration (based on cumulative absence hours in DATA) ============ */
+function referralKey(name, className){
+  return normalizeKey(name) + "|" + normalizeKey(className);
+}
+
+function isNonValue(v){
+  return normalizeKey(v) === "non";
+}
+
+function isReferred(s){
+  const info = referralInfo[referralKey(s.name, s.className)];
+  if(!info) return false;
+  if(info.disabled) return false;
+  return info.totalHours >= REFERRAL_HOURS_THRESHOLD;
+}
+
+/* ============ Behavior reports badge (based on Sheet3 / dashboard.html) ============ */
+function hasOpenReport(s){
+  const info = reportsInfo[referralKey(s.name, s.className)];
+  return !!(info && info.hasOpenReport);
+}
+
+/* ============ Language switching (display text only) ============ */
+function setLanguage(lang){
+  currentLang = (lang === "ar") ? "ar" : "fr";
+  localStorage.setItem("appLang", currentLang);
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+  renderStaticText();
+  refreshDynamicSelectsText();
+  renderStudents();
+}
+
+function renderStaticText(){
+  const tr = t();
+  document.title = tr.schoolName + " — " + tr.pageTitle;
+  $("schoolNameLabel").textContent = tr.schoolName;
+  $("headerTitle").textContent = tr.headerTitle;
+  $("headerSubtitle").textContent = tr.headerSubtitle;
+  $("reportsBtnLabel").textContent = tr.reportsBtn;
+  $("reportsBtn").title = tr.reportsBtnTitle;
+  $("courseInfoTitle").textContent = tr.courseInfo;
+  $("dateLabel").textContent = tr.date;
+  $("sessionTypeLabel").textContent = tr.sessionType;
+  $("periodLabel").textContent = tr.period;
+  $("teacherLabel").textContent = tr.teacher;
+  $("subjectLabel").textContent = tr.subject;
+  $("classLabel").textContent = tr.classSection;
+  $("studentsTitleText").textContent = tr.studentsOfClass;
+  $("searchField").placeholder = tr.searchPlaceholder;
+  $("totalLabel").textContent = tr.totalStudents;
+  $("absentLabelSpan").textContent = tr.absentLabel;
+  $("presentLabelSpan").textContent = tr.presentLabel;
+  $("selectAllBtn").textContent = tr.selectAll;
+  $("selectNoneBtn").textContent = tr.selectNone;
+  $("dataLoadingLabel").textContent = tr.loadingStudents;
+  $("referralLoadingLabel").textContent = tr.loadingReferral;
+  $("appFooter").textContent = tr.footer;
+  if(!isSaving) $("saveBtn").textContent = tr.saveBtn;
+  $("langFr").classList.toggle("active", currentLang === "fr");
+  $("langAr").classList.toggle("active", currentLang === "ar");
+}
+
+/* Re-translate select placeholders/options while preserving current selections (no data reload) */
+function refreshDynamicSelectsText(){
+  const tr = t();
+
+  // Session type select
+  const sessionSel = $("sessionTypeField");
+  const curSessionType = sessionSel.value || currentSessionType;
+  sessionSel.innerHTML =
+    `<option value="single">${tr.sessionTypeSingle}</option>` +
+    `<option value="double">${tr.sessionTypeDouble}</option>`;
+  sessionSel.value = curSessionType;
+  currentSessionType = sessionSel.value || "single";
+
+  // Period select (options depend on the selected session type)
+  const periodSel = $("periodField");
+  const curPeriod = periodSel.value;
+  const periodsList = currentPeriodsList();
+  periodSel.innerHTML = `<option value="">${tr.choose}</option>` +
+    periodsList.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  periodSel.value = periodsList.includes(curPeriod) ? curPeriod : "";
+
+  // Teacher select
+  const teacherSel = $("teacherField");
+  const curTeacher = teacherSel.value;
+  if(teacherNames.length === 0){
+    teacherSel.innerHTML = `<option value="">${tr.noTeacherFound}</option>`;
+  } else {
+    teacherSel.innerHTML = `<option value="">${tr.chooseTeacher}</option>` +
+      teacherNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+    teacherSel.value = curTeacher;
+  }
+
+  // Subject select (preserve selection)
+  const curSubject = $("subjectField").value;
+  populateSubjectSelect(teacherSel.value);
+  if(curSubject) $("subjectField").value = curSubject;
+
+  // Class select
+  const classSel = $("classField");
+  const curClass = classSel.value;
+  if(classNames.length > 0){
+    classSel.innerHTML = `<option value="">${tr.chooseClass}</option>` +
+      classNames.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    classSel.value = curClass;
+  }
+}
+
+/* ============ Populate fixed fields ============ */
+function initStaticFields(){
+  $("dateField").value = todayFR();
+  refreshDynamicSelectsText();
+}
+
+/* ============ Load students from SheetDB ============ */
+const STUDENTS_CACHE_KEY = "cachedStudentsPayload_v1";
+const REFERRAL_CACHE_KEY = "cachedAbsencesPayload_v1";
+const REPORTS_CACHE_KEY = "cachedReportsPayload_v1";
+/* Mise à jour légère et automatique du résumé d'orientation. */
+const REFERRAL_CACHE_TTL_MS = 2 * 60 * 1000;
+const REFERRAL_REFRESH_INTERVAL_MS = 2 * 60 * 1000;
+let referralRequestInFlight = false;
+
+function applyStudentsPayload(payload){
+  const classSel = $("classField");
+  const rows =
+    Array.isArray(payload) ? payload :
+    Array.isArray(payload.students) ? payload.students :
+    Array.isArray(payload.data) ? payload.data :
+    Array.isArray(payload.rows) ? payload.rows : [];
+  if(!rows.length){
+    classSel.innerHTML = `<option value="">${t().noClassFound}</option>`;
+    showMessage(t().noRowsFound(STUDENTS_SHEET), "error");
+    return false;
+  }
+  const sampleKeys = Object.keys(rows[0]);
+  const classKey = findColumn(sampleKeys, CLASS_COLUMN_ALIASES);
+  const nameKey = findColumn(sampleKeys, NAME_COLUMN_ALIASES);
+  const numKey = findColumn(sampleKeys, NUM_COLUMN_ALIASES);
+  const teacherKey = findColumn(sampleKeys, TEACHER_COLUMN_ALIASES);
+  const subjectKey = findColumn(sampleKeys, SUBJECT_COLUMN_ALIASES);
+
+  // Colonnes d'affectation des classes : « قسم 1 » à « قسم 12 »
+  // Elles doivent être dans la même feuille et sur la même ligne que l'enseignant.
+  const assignmentKeys = [];
+  for(let i=1;i<=12;i++){
+    const aliases = [
+      `قسم ${i}`, `قسم${i}`, `classe ${i}`, `classe${i}`,
+      `section ${i}`, `section${i}`, `class ${i}`, `class${i}`
+    ];
+    const key = findColumn(sampleKeys, aliases);
+    if(key) assignmentKeys.push(key);
+  }
+
+  allStudents = rows.map(r=>{
+    const name = nameKey ? String(r[nameKey] || "").trim() : "";
+    const num = numKey ? String(r[numKey] || "").trim() : "";
+    const className = classKey ? String(r[classKey] || "").trim() : "";
+    return { name, num, className };
+  }).filter(s => s.name && s.className);
+  const seen = new Set(); classNames = [];
+  allStudents.forEach(s=>{ if(!seen.has(s.className)){ seen.add(s.className); classNames.push(s.className); } });
+  classNames.sort((a,b)=> a.localeCompare(b, "fr", {numeric:true}));
+  teacherSubjects = {};
+  teacherClasses = {};
+  const subjSeen = new Set();
+  allSubjects = [];
+  if(teacherKey){
+    rows.forEach(r=>{
+      const teacher = String(r[teacherKey] || "").trim();
+      if(!teacher) return;
+
+      const subject = subjectKey ? String(r[subjectKey] || "").trim() : "";
+      if(!teacherSubjects[teacher]) teacherSubjects[teacher] = [];
+      if(!teacherClasses[teacher]) teacherClasses[teacher] = [];
+
+      if(subject && !teacherSubjects[teacher].includes(subject)) teacherSubjects[teacher].push(subject);
+      if(subject && !subjSeen.has(subject)){ subjSeen.add(subject); allSubjects.push(subject); }
+
+      // Lire uniquement les cellules « قسم 1 » … « قسم 12 » de la même ligne.
+      assignmentKeys.forEach(k=>{
+        const value = String(r[k] || "").trim();
+        if(!value) return;
+        // Une cellule peut contenir plusieurs classes séparées par une virgule, /, ; ou retour ligne.
+        value.split(/[,;\/\n]+/).map(v=>v.trim()).filter(Boolean).forEach(cls=>{
+          if(!teacherClasses[teacher].includes(cls)) teacherClasses[teacher].push(cls);
+        });
+      });
+    });
+    teacherNames = Object.keys(teacherSubjects).sort((a,b)=> a.localeCompare(b, "fr"));
+    allSubjects.sort((a,b)=> a.localeCompare(b, "fr"));
+    Object.keys(teacherClasses).forEach(t=>{
+      teacherClasses[t].sort((a,b)=> a.localeCompare(b, "fr", {numeric:true}));
+    });
+  } else teacherNames = [];
+  populateTeacherSelect();
+  if(classNames.length === 0){
+    classSel.innerHTML = `<option value="">${t().noClassDetected}</option>`;
+    showMessage(t().noClassDetectedMsg(rows.length, sampleKeys.join(", ")), "error");
+    return false;
+  }
+  // Au chargement initial, aucun enseignant n'est sélectionné : afficher toutes les classes.
+  const curClass = classSel.value;
+  populateClassSelect("", curClass);
+  return true;
+}
+
+async function loadStudents(){
+  const classSel = $("classField");
+  setLoading("dataLoading", true);
+  // Lancés en parallèle (non bloquants) pour accélérer l'affichage global :
+  // chacun peint instantanément depuis son propre cache puis se met à jour seul.
+  loadReferralInfo();
+  loadReportsInfo();
+
+  // 1) Instant paint from cache (if any) so the UI is usable immediately
+  let hadCache = false;
+  try{
+    const cached = localStorage.getItem(STUDENTS_CACHE_KEY);
+    if(cached){
+      applyStudentsPayload(JSON.parse(cached));
+      hadCache = true;
+      if(currentClass) renderStudents();
+    }
+  }catch(e){ /* ignore corrupt cache */ }
+
+  if(!hadCache){
+    classSel.innerHTML = `<option value="">${t().loadingClasses}</option>`;
+  }
+
+  // 2) Fetch fresh data in the background and update in place
+  try{
+    const res = await fetch(API_URL + "?action=students", { cache:"no-store" });
+    if(!res.ok){
+      const bodyText = await res.text().catch(()=> "");
+      console.error("Apps Script error", res.status, bodyText);
+      if(!hadCache){
+        classSel.innerHTML = `<option value="">${t().loadingError}</option>`;
+        showMessage(t().loadError, "error");
+      }
+      setLoading("dataLoading", false);
+      return;
+    }
+    const payload = await res.json();
+    const ok = applyStudentsPayload(payload);
+    if(ok){
+      try{ localStorage.setItem(STUDENTS_CACHE_KEY, JSON.stringify(payload)); }catch(e){ /* storage full/unavailable */ }
+      if(currentClass) renderStudents();
+    }
+    setLoading("dataLoading", false);
+  }catch(err){
+    console.error("Fetch failed", err);
+    if(!hadCache){
+      classSel.innerHTML = `<option value="">${t().loadingError}</option>`;
+      showMessage(t().loadError, "error");
+    }
+    setLoading("dataLoading", false);
+  }
+}
+
+/* Fetch the DATA sheet (absence log) and compute, per student (name+classe),
+   the cumulative absence hours and whether the referral flag has been disabled.
+   Disabling rule: the LAST absence row (in sheet order) for that student has
+   its N° (column H) set to "NON" (case/space-insensitive). This never changes
+   the DATA sheet structure — it only reads it. */
+function computeReferralInfo(payload){
+  const rows = Array.isArray(payload) ? payload : (Array.isArray(payload.absences) ? payload.absences : []);
+  const info = {};
+  rows.forEach(r=>{
+    const name = String(r["Élève"] || r["Eleve"] || "").trim();
+    const className = String(r["Classe"] || "").trim();
+    if(!name || !className) return;
+    const key = referralKey(name, className);
+    const hours = parseFloat(r["Nb Heures"]);
+    if(!info[key]) info[key] = { totalHours: 0, disabled: false };
+    if(!isNaN(hours)) info[key].totalHours += hours;
+    // Track disable flag from the last matching row seen (sheet order = array order)
+    info[key].disabled = isNonValue(r["N°"]);
+  });
+  return info;
+}
+
+async function loadReferralInfo(forceRefresh = false){
+  if(referralRequestInFlight) return;
+  setLoading("referralLoading", true);
+  // 1) Instant paint from cache. Support both the old raw format and the new
+  // timestamped format so existing users do not lose their local cache.
+  let cacheIsFresh = false;
+  try{
+    const cached = localStorage.getItem(REFERRAL_CACHE_KEY);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      const payload = parsed && parsed.payload !== undefined ? parsed.payload : parsed;
+      const cachedAt = parsed && parsed.cachedAt ? Number(parsed.cachedAt) : 0;
+      referralInfo = computeReferralInfo(payload);
+      cacheIsFresh = cachedAt > 0 && (Date.now() - cachedAt) < REFERRAL_CACHE_TTL_MS;
+      if(currentClass) renderStudents();
+    }
+  }catch(e){ /* ignore corrupt cache */ }
+
+  // 2) Do not download the complete DATA sheet again while the cache is fresh.
+  // A forced refresh is used immediately after saving new absences.
+  if(cacheIsFresh && !forceRefresh){
+    setLoading("referralLoading", false);
+    return;
+  }
+
+  referralRequestInFlight = true;
+  try{
+    const res = await fetch(API_URL + "?action=absences", { cache:"no-store" });
+    if(!res.ok){
+      referralRequestInFlight = false;
+      setLoading("referralLoading", false);
+      return;
+    }
+    const payload = await res.json();
+    referralInfo = computeReferralInfo(payload);
+    try{
+      localStorage.setItem(REFERRAL_CACHE_KEY, JSON.stringify({
+        cachedAt: Date.now(),
+        payload: payload
+      }));
+    }catch(e){ /* storage full/unavailable */ }
+    if(currentClass) renderStudents();
+  }catch(e){ console.warn("Referral info load skipped:", e); }
+  referralRequestInFlight = false;
+  setLoading("referralLoading", false);
+}
+
+function startReferralAutoRefresh(){
+  window.setInterval(()=>{
+    // لا نطلب بيانات جديدة إذا كانت الصفحة في الخلفية أو يوجد طلب جارٍ.
+    // عند العودة، سيتم التحديث في الدورة التالية أو عند إعادة فتح الصفحة.
+    if(document.hidden || referralRequestInFlight) return;
+    loadReferralInfo(true);
+  }, REFERRAL_REFRESH_INTERVAL_MS);
+}
+
+/* Un rapport est considéré "ouvert" (affiché) tant que son statut n'est pas dans
+   REPORT_CLOSED_STATUSES. Ceci ne modifie jamais les données du dashboard — lecture seule. */
+function computeReportsInfo(payload){
+  const rows = Array.isArray(payload) ? payload : (Array.isArray(payload.reports) ? payload.reports : []);
+  const info = {};
+  rows.forEach(r=>{
+    const name = String(r.student || r["Élève"] || r["Eleve"] || "").trim();
+    const className = String(r.className || r["Classe"] || "").trim();
+    if(!name || !className) return;
+    const key = referralKey(name, className);
+    const status = String(r.status || "").trim();
+    const isClosed = REPORT_CLOSED_STATUSES.some(st => normalizeKey(st) === normalizeKey(status));
+    if(!info[key]) info[key] = { hasOpenReport: false, count: 0 };
+    info[key].count += 1;
+    if(!isClosed) info[key].hasOpenReport = true;
+  });
+  return info;
+}
+
+async function loadReportsInfo(){
+  if(!API_URL_SHEET3) return;
+
+  // 1) Instant paint from cache so the report badges appear immediately
+  try{
+    const cached = localStorage.getItem(REPORTS_CACHE_KEY);
+    if(cached){
+      reportsInfo = computeReportsInfo(JSON.parse(cached));
+      if(currentClass) renderStudents();
+    }
+  }catch(e){ /* ignore corrupt cache */ }
+
+  // 2) Refresh from network in the background
+  try{
+    const res = await fetch(API_URL_SHEET3 + "?action=getReports", { cache:"no-store" });
+    if(!res.ok) return;
+    const payload = await res.json();
+    reportsInfo = computeReportsInfo(payload);
+    try{ localStorage.setItem(REPORTS_CACHE_KEY, JSON.stringify(payload)); }catch(e){ /* storage full/unavailable */ }
+    if(currentClass) renderStudents();
+  }catch(e){ console.warn("Reports info load skipped:", e); }
+}
+
+function findColumn(keys, aliases){
+  for(const k of keys){
+    if(aliases.includes(normalizeKey(k))) return k;
+  }
+  // fallback: partial match
+  for(const k of keys){
+    const nk = normalizeKey(k);
+    if(aliases.some(a => nk.includes(a) || a.includes(nk))) return k;
+  }
+  return null;
+}
+
+/* ============ Teacher / subject selects ============ */
+function populateTeacherSelect(){
+  const teacherSel = $("teacherField");
+  if(teacherNames.length === 0){
+    teacherSel.innerHTML = `<option value="">${t().noTeacherFound}</option>`;
+    populateSubjectSelect("");
+    return;
+  }
+  teacherSel.innerHTML = `<option value="">${t().chooseTeacher}</option>` +
+    teacherNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+  populateSubjectSelect("");
+}
+
+function populateClassSelect(teacher, keepValue = ""){
+  const classSel = $("classField");
+  const classes = teacher && teacherClasses[teacher] ? teacherClasses[teacher] : classNames;
+
+  const unique = [];
+  const seen = new Set();
+  classes.forEach(c=>{
+    const v = String(c || "").trim();
+    if(v && !seen.has(v)){ seen.add(v); unique.push(v); }
+  });
+  unique.sort((a,b)=> a.localeCompare(b, "fr", {numeric:true}));
+
+  if(teacher && unique.length === 0){
+    classSel.innerHTML = `<option value="">${t().noClassFound}</option>`;
+    currentClass = "";
+    $("studentList").innerHTML = `<div class="empty-state">Aucun département/classe attribué à cet enseignant.</div>`;
+    $("searchField").disabled = true;
+    updateCounts([]);
+    return;
+  }
+
+  classSel.innerHTML = `<option value="">${t().chooseClass}</option>` +
+    unique.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+  if(keepValue && unique.includes(keepValue)){
+    classSel.value = keepValue;
+  } else {
+    classSel.value = "";
+    currentClass = "";
+    $("searchField").value = "";
+    currentSearch = "";
+    renderStudents();
+  }
+}
+
+function populateSubjectSelect(teacher){
+  const subjectSel = $("subjectField");
+  const subjects = teacher && teacherSubjects[teacher] ? teacherSubjects[teacher] : [];
+
+  if(teacher && subjects.length > 0){
+    subjectSel.innerHTML = subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    subjectSel.value = subjects[0];
+  } else if(teacher){
+    subjectSel.innerHTML = `<option value="">${t().noSubjectForTeacher}</option>`;
+  } else if(allSubjects.length > 0){
+    subjectSel.innerHTML = `<option value="">${t().chooseTeacherFirst}</option>` +
+      allSubjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  } else {
+    subjectSel.innerHTML = `<option value="">${t().chooseTeacher}</option>`;
+  }
+}
+
+/* ============ Render students of selected class ============ */
+function renderStudents(){
+  const listEl = $("studentList");
+  const searchInput = $("searchField");
+  const subLabel = $("classSubLabel");
+
+  if(!currentClass){
+    listEl.innerHTML = `<div class="empty-state">${t().emptyNoClass}</div>`;
+    searchInput.disabled = true;
+    subLabel.textContent = t().subLabelDefault;
+    updateCounts([]);
+    return;
+  }
+
+  searchInput.disabled = false;
+  const classList = allStudents.filter(s => s.className === currentClass);
+  subLabel.textContent = t().studentsCount(currentClass, classList.length);
+
+  const q = normalizeKey(currentSearch);
+  const filtered = q
+    ? classList.filter(s => normalizeKey(s.name).includes(q) || normalizeKey(s.num).includes(q))
+    : classList;
+
+  const absentSet = getAbsentSet(currentClass);
+
+  if(filtered.length === 0){
+    listEl.innerHTML = `<div class="empty-state">${t().noStudentFound}</div>`;
+  } else {
+    listEl.innerHTML = filtered.map((s, idx)=>{
+      const key = studentKey(s);
+      const isAbsent = absentSet.has(key);
+      const initial = (s.name || "?").trim().charAt(0).toUpperCase();
+      const referred = isReferred(s);
+      const reported = hasOpenReport(s);
+      return `<label class="student-card${isAbsent ? " is-absent" : ""}${reported ? " is-reported" : ""}" data-key="${escapeHtml(key)}">
+        <input type="checkbox" ${isAbsent ? "checked" : ""}>
+        <span class="s-rank">${idx + 1}</span>
+        <span class="s-avatar">${escapeHtml(initial)}</span>
+        <span class="s-name">${escapeHtml(s.name)}</span>
+        ${(referred || reported) ? `<span class="s-flags">
+          ${referred ? `<span class="s-referral">${escapeHtml(t().referralBadge)}</span>` : ""}
+          ${reported ? `<span class="s-report">${escapeHtml(t().reportBadge)}</span>` : ""}
+        </span>` : ""}
+        ${s.num ? `<span class="s-num">${escapeHtml(s.num)}</span>` : ""}
+      </label>`;
+    }).join("");
+
+    listEl.querySelectorAll(".student-card").forEach(card=>{
+      const checkbox = card.querySelector("input");
+      card.addEventListener("click", (e)=>{
+        e.preventDefault();
+        const key = card.dataset.key;
+        const set = getAbsentSet(currentClass);
+        if(set.has(key)) set.delete(key); else set.add(key);
+        checkbox.checked = set.has(key);
+        card.classList.toggle("is-absent", set.has(key));
+        updateCounts(classList);
+      });
+    });
+  }
+
+  updateCounts(classList);
+}
+
+function updateCounts(classList){
+  const total = classList.length;
+  const absentSet = currentClass ? getAbsentSet(currentClass) : new Set();
+  // only count absents that still belong to the current class list
+  const validKeys = new Set(classList.map(studentKey));
+  let absentCount = 0;
+  absentSet.forEach(k=>{ if(validKeys.has(k)) absentCount++; });
+  $("countTotal").textContent = total;
+  $("countAbsent").textContent = absentCount;
+  $("countPresent").textContent = Math.max(0, total - absentCount);
+}
+
+/* ============ Messages ============ */
+function showMessage(text, type){
+  const el = $("statusMsg");
+  el.textContent = text;
+  el.className = "msg show " + (type === "error" ? "msg-error" : "msg-success");
+}
+function clearMessage(){
+  const el = $("statusMsg");
+  el.className = "msg";
+  el.textContent = "";
+}
+
+/* ============ Save (record absences only) ============ */
+async function handleSave(){
+  // Garde anti-double-clic : si un enregistrement est déjà en cours, on ignore
+  // tout appel supplémentaire (clics rapides, double-tap tactile, touche Entrée...).
+  // Indépendant de l'attribut "disabled" du bouton pour éviter toute condition de course.
+  if(isSaving) return;
+
+  clearMessage();
+
+  const sessionType = $("sessionTypeField").value === "double" ? "double" : "single";
+  const period = $("periodField").value;
+  const subject = $("subjectField").value.trim();
+  const teacher = $("teacherField").value.trim();
+  const className = $("classField").value;
+  const hoursCount = SESSION_HOURS[sessionType] || 1;
+
+  if(!className){ showMessage(t().errNoClass, "error"); return; }
+  if(!period){ showMessage(t().errNoPeriod, "error"); return; }
+  if(!teacher){ showMessage(t().errNoTeacher, "error"); return; }
+  if(!subject){ showMessage(t().errNoSubject, "error"); return; }
+
+  const classList = allStudents.filter(s => s.className === className);
+  const absentSet = getAbsentSet(className);
+  const absentStudents = classList.filter(s => absentSet.has(studentKey(s)));
+
+  if(absentStudents.length === 0){ showMessage(t().errNoAbsent, "error"); return; }
+
+  const date = $("dateField").value;
+  const saveBtn = $("saveBtn");
+
+  // Retour visuel immédiat : on verrouille le bouton tout de suite, avant
+  // toute opération réseau, pour que l'utilisateur voie une réaction instantanée
+  // au clic au lieu d'un bouton figé pendant la vérification des doublons.
+  isSaving = true;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span> ' + t().savingBtn;
+
+  // Vérification des doublons à partir du cache déjà chargé (alimenté par
+  // loadReferralInfo) au lieu d'un nouvel appel réseau à Apps Script.
+  // Cela supprime un aller-retour réseau complet du chemin critique de l'enregistrement.
+  try{
+    let existingRows = [];
+    const cached = localStorage.getItem(REFERRAL_CACHE_KEY);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      const payload = parsed && parsed.payload !== undefined ? parsed.payload : parsed;
+      existingRows = Array.isArray(payload) ? payload : (Array.isArray(payload.absences) ? payload.absences : []);
+    }
+    const duplicate = existingRows.some(r =>
+      String(r.Date || "").trim() === date &&
+      String(r.Heure || "").trim() === period &&
+      String(r.Matière || "").trim() === subject &&
+      String(r.Professeur || "").trim() === teacher &&
+      String(r.Classe || "").trim() === className
+    );
+    if(duplicate && !confirm(t().duplicateConfirm)){
+      isSaving = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = t().saveBtn;
+      return;
+    }
+  }catch(e){ console.warn("Duplicate check skipped:", e); }
+
+  const rows = absentStudents.map(s => ({
+    "Date": date,
+    "Heure": period,
+    "Nb Heures": hoursCount,
+    "Matière": subject,
+    "Professeur": teacher,
+    "Classe": className,
+    "Élève": s.name,
+    "N°": s.num,
+    "Statut": "Absent"
+  }));
+
+  try{
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveAbsences", data: rows })
+    });
+    if(!res.ok) throw new Error("save failed");
+
+    showMessage(t().saveSuccess(rows.length, rows.length * hoursCount), "success");
+    absentByClass[className] = new Set();
+    renderStudents();
+    loadReferralInfo(true);
+    loadReportsInfo();
+  }catch(err){
+    showMessage(t().saveError, "error");
+  }finally{
+    isSaving = false;
+    saveBtn.disabled = false;
+    saveBtn.textContent = t().saveBtn;
+  }
+}
+
+/* ============ Event wiring ============ */
+function wireEvents(){
+  $("langFr").addEventListener("click", ()=> setLanguage("fr"));
+  $("langAr").addEventListener("click", ()=> setLanguage("ar"));
+
+  $("teacherField").addEventListener("change", (e)=>{
+    const teacher = e.target.value;
+    populateSubjectSelect(teacher);
+
+    // IMPORTANT : après sélection d'un enseignant, seules ses classes
+    // présentes dans « قسم 1 » à « قسم 12 » sont proposées.
+    populateClassSelect(teacher);
+  });
+
+  $("sessionTypeField").addEventListener("change", (e)=>{
+    currentSessionType = e.target.value === "double" ? "double" : "single";
+    const periodSel = $("periodField");
+    const periodsList = currentPeriodsList();
+    periodSel.innerHTML = `<option value="">${t().choose}</option>` +
+      periodsList.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+    periodSel.value = "";
+  });
+
+  $("classField").addEventListener("change", (e)=>{
+    currentClass = e.target.value;
+    $("searchField").value = "";
+    currentSearch = "";
+    renderStudents();
+  });
+
+  $("searchField").addEventListener("input", (e)=>{
+    currentSearch = e.target.value;
+    renderStudents();
+  });
+
+  $("selectAllBtn").addEventListener("click", ()=>{
+    if(!currentClass) return;
+    const classList = allStudents.filter(s => s.className === currentClass);
+    const set = getAbsentSet(currentClass);
+    classList.forEach(s => set.add(studentKey(s)));
+    renderStudents();
+  });
+
+  $("selectNoneBtn").addEventListener("click", ()=>{
+    if(!currentClass) return;
+    absentByClass[currentClass] = new Set();
+    renderStudents();
+  });
+
+  $("saveBtn").addEventListener("click", handleSave);
+}
+
+/* ============ Init ============ */
+function init(){
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+  renderStaticText();
+  initStaticFields();
+  renderStudents();
+  wireEvents();
+  loadStudents();
+  startReferralAutoRefresh();
+}
+document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
