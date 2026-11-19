@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تقارير سلوك التلاميذ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F8;
+  --surface:#FFFFFF;
+  --border:#E2E6EC;
+  --ink:#1C2530;
+  --muted:#697488;
+  --primary:#1F3A5C;
+  --primary-dark:#152943;
+  --primary-tint:#EAF0F6;
+  --accent:#B08245;
+  --accent-tint:#F8F1E6;
+  --danger:#B42318;
+  --danger-tint:#FDF2F1;
+  --success:#02724A;
+  --success-tint:#EAFAF2;
+  --warn:#9A5B12;
+  --warn-tint:#FFF8EA;
+  --info:#175CD3;
+  --info-tint:#EEF6FF;
+  --radius:10px;
+}
+
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.chart-card{border:1px solid var(--border);border-radius:9px;padding:14px;background:#fff}
+.chart-card h3{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--primary-dark)}
+.chart-box{position:relative;height:210px}
+.chart-box canvas{max-height:100%}
+.chart-box-gauge{display:flex;align-items:center;justify-content:center}
+.gauge-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.gauge-label b{display:block;font-size:22px;color:var(--primary-dark);font-weight:900}
+.gauge-label span{font-size:11px;color:var(--muted)}
+.chart-error{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:12px;color:var(--muted);background:#FAFBFC;border-radius:6px;line-height:1.7}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Tajawal',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+.top{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .mark{width:40px;height:40px;border-radius:9px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex:none}
+.brand h1{font-size:17px;margin:0;font-weight:700}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.container{max-width:1180px;margin:24px auto;padding:0 16px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+.card.accent-top{border-top:3px solid var(--primary)}
+h2{margin:0 0 18px;font-size:18px;font-weight:700}
+.section-title{font-size:14px;font-weight:800;margin:26px 0 14px;padding:9px 14px;border-right:4px solid var(--accent);color:var(--accent);background:var(--accent-tint);border-radius:6px;letter-spacing:.2px}
+.section-title:first-of-type{margin-top:4px}
+.section-hint{color:var(--muted);font-size:12px;margin:-6px 0 12px;padding-right:13px}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-weight:700;font-size:13px}
+label .opt{font-weight:400;color:var(--muted);font-size:11px}
+.muted{color:var(--muted);font-size:12px}
+input,select,textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+input:disabled,select:disabled{background:#F7F8FA;color:var(--muted);cursor:not-allowed}
+textarea{min-height:110px;resize:vertical;line-height:1.6}
+select{border:1px solid var(--primary);background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path fill="%231F3A5C" d="M6 8 0 0h12z"/></svg>') no-repeat left 12px center;padding-left:32px;font-weight:700;color:var(--primary-dark);appearance:none;-webkit-appearance:none}
+select:disabled{border-color:var(--border);font-weight:400}
+
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.check{border:1px solid var(--border);padding:10px 11px;border-radius:8px;background:#fff;display:flex;align-items:center;font-size:13px;transition:border-color .15s,background .15s}
+.check:has(input:checked){border-color:var(--primary);background:var(--primary-tint)}
+.check input{width:auto;margin-left:8px;accent-color:var(--primary)}
+
+.students-box{border:1.5px solid var(--accent);border-radius:8px;background:#fff;overflow:hidden}
+.students-list{max-height:230px;overflow:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border)}
+.students-list label{display:flex;align-items:center;gap:8px;background:#fff;padding:9px 11px;font-size:13px;font-weight:400;cursor:pointer}
+.students-list label:nth-child(4n),.students-list label:nth-child(4n-1){background:#FAFBFC}
+.students-list label:has(input:checked){background:var(--primary-tint);font-weight:700}
+.students-list input{width:auto;accent-color:var(--primary)}
+.students-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px;background:#fff}
+.students-count{font-size:12px;color:#fff;font-weight:700;padding:9px 11px;background:var(--accent);border-top:1px solid var(--border)}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{border:0;border-radius:8px;padding:11px 20px;font-weight:700;font-size:13px;transition:filter .15s}
+.btn:hover{filter:brightness(0.94)}
+.primary{background:var(--primary);color:#fff}
+.secondary{background:#EEF1F5;color:var(--primary-dark)}
+.danger{background:var(--danger);color:#fff}
+.success{background:var(--success);color:#fff}
+
+.notice{padding:12px 14px;border-radius:8px;background:var(--success-tint);color:var(--success);margin-bottom:15px;display:none;font-weight:700;font-size:13px;border:1px solid #B7E4CE}
+
+.login{max-width:420px;margin:60px auto}
+.login .mark-lg{width:56px;height:56px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;margin:0 auto 14px}
+.role{display:flex;gap:10px}
+.role label{flex:1;border:1px solid var(--border);padding:11px;border-radius:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+.role label:has(input:checked){border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
+.role input{width:auto;margin-left:6px;accent-color:var(--primary)}
+.demo-hint{margin-top:14px;font-size:12px;color:var(--muted);background:#FAFBFC;border:1px solid var(--border);border-radius:8px;padding:9px 11px}
+
+.hidden{display:none!important}
+.error{color:var(--danger);font-size:12px;min-height:14px}
+.userbox{display:flex;align-items:center;gap:10px}
+.logout{border:1px solid var(--border);background:#fff;padding:8px 13px;border-radius:8px;font-size:13px;font-weight:700;color:var(--primary-dark)}
+.logout:hover{background:var(--primary-tint)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{padding:15px 16px;border:1px solid var(--border);border-radius:9px;background:#fff;border-right:3px solid var(--primary-tint)}
+.kpi b{font-size:24px;display:block;margin-top:6px;font-weight:900;color:var(--primary-dark)}
+.kpi span{font-size:12px;color:var(--muted);font-weight:700}
+.kpi.k-new{border-right-color:var(--info)}
+.kpi.k-follow{border-right-color:var(--warn)}
+.kpi.k-done{border-right-color:var(--success)}
+.kpi.k-danger b{color:var(--danger)}
+
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:920px}
+th,td{padding:11px;border-bottom:1px solid var(--border);text-align:right;font-size:13px}
+th{background:#FAFBFC;color:var(--primary-dark);font-weight:700;font-size:12px}
+tbody tr:hover{background:#FAFBFC}
+
+.badge{display:inline-block;padding:5px 10px;border-radius:20px;background:#F2F4F7;font-size:11px;font-weight:700}
+.new{background:var(--info-tint);color:var(--info)}
+.follow{background:var(--warn-tint);color:var(--warn)}
+.done{background:var(--success-tint);color:var(--success)}
+.closed{background:#F2F4F7;color:#475467}
+.chip{display:inline-block;background:var(--primary-tint);color:var(--primary-dark);border-radius:14px;padding:3px 9px;font-size:11px;margin:2px}
+
+.status-select{appearance:none;-webkit-appearance:none;border:1px solid transparent;border-radius:20px;padding:5px 26px 5px 10px;font-size:11px;font-weight:700;cursor:pointer;background-color:#F2F4F7;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="7" viewBox="0 0 12 8"><path fill="%23697488" d="M6 8 0 0h12z"/></svg>');background-repeat:no-repeat;background-position:left 9px center}
+.status-select.new{background-color:var(--info-tint);color:var(--info)}
+.status-select.follow{background-color:var(--warn-tint);color:var(--warn)}
+.status-select.done{background-color:var(--success-tint);color:var(--success)}
+.status-select.closed{background-color:#F2F4F7;color:#475467}
+.status-select.saving{opacity:.6;cursor:wait}
+.status-select:focus{outline:2px solid var(--primary);outline-offset:1px}
+
+.smallbtn{border:1px solid var(--border);background:#fff;padding:6px 10px;border-radius:7px;font-size:12px;margin:2px;font-weight:700;color:var(--primary-dark)}
+.smallbtn:hover{background:var(--primary-tint)}
+
+.modal{position:fixed;inset:0;background:rgba(16,24,40,.5);display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}
+.modalbox{background:#fff;border-radius:12px;max-width:800px;width:100%;max-height:90vh;overflow:auto;padding:24px}
+.modalbox .grid div{font-size:13px;line-height:1.9}
+
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+
+@media(max-width:700px){
+  .grid,.checks,.filters,.charts-grid{grid-template-columns:1fr}
+  .students-list{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .top{align-items:flex-start}
+  .brand h1{font-size:15px}
+  .container{margin-top:14px;padding:0 10px}
+  .card{padding:16px}
+  .actions .btn{width:100%}
+}
+
+/* ===== تحسينات التصميم ===== */
+:root{--shadow-sm:0 1px 2px rgba(16,24,40,.05);--shadow-md:0 4px 14px rgba(16,24,40,.07)}
+body{background:linear-gradient(180deg,#EAEFF5 0,var(--bg) 260px) fixed}
+.top{background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-bottom:0;box-shadow:0 2px 10px rgba(21,41,67,.25);padding:12px 22px}
+.brand h1{color:#fff}.brand p{color:rgba(255,255,255,.75)}
+.brand .mark{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);font-size:20px}
+.userbox #currentUser{color:#fff}
+.logout{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+.logout:hover{background:rgba(255,255,255,.22)}
+.card{box-shadow:var(--shadow-sm);border-radius:14px}
+.card h2{display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:5px;height:20px;border-radius:3px;background:var(--accent)}
+.login{margin:48px auto}
+.login .card{box-shadow:var(--shadow-md);padding:28px;border-top:4px solid var(--primary)}
+.login .mark-lg{background:linear-gradient(135deg,var(--primary),var(--primary-dark));font-size:26px;width:64px;height:64px;border-radius:16px;box-shadow:0 6px 16px rgba(31,58,92,.3)}
+.btn{border-radius:9px;box-shadow:var(--shadow-sm);transition:transform .12s,filter .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:none}
+.kpi{border-radius:12px;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.kpi b{font-size:28px}
+.chart-card{border-radius:12px;box-shadow:var(--shadow-sm)}
+.table-wrap{border:1px solid var(--border);border-radius:10px}
+table{border-collapse:separate;border-spacing:0}
+th{position:sticky;top:0;background:var(--primary-tint);border-bottom:2px solid var(--primary)}
+tbody tr:nth-child(even){background:#FAFBFC}
+tbody tr:hover{background:var(--primary-tint)}
+tbody tr:last-child td{border-bottom:0}
+.modalbox{border-radius:16px;box-shadow:0 20px 50px rgba(16,24,40,.3)}
+.section-title{border-radius:8px}
+footer{border-top:1px solid var(--border);margin-top:10px}
+
+/* مؤشر التحديث التلقائي */
+.live{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 12px;margin-inline-start:auto}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 0 rgba(2,114,74,.5);animation:pulse 2s infinite}
+.live.loading i{background:var(--warn);animation:none}
+.live.error i{background:var(--danger);animation:none}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(2,114,74,0)}100%{box-shadow:0 0 0 0 rgba(2,114,74,0)}}
+.actions .live{align-self:center}
+@media(max-width:700px){.top{align-items:center}.live{width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+
+<div id="loginPage" class="container login">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:18px">
+      <div class="mark-lg">🏫</div>
+      <h2 style="margin-bottom:4px">نظام تقارير سلوك التلاميذ</h2>
+      <div class="muted">تسجيل ومتابعة التقارير</div>
+    </div>
+    <div class="section-title">تسجيل الدخول</div>
+    <div class="role">
+      <label><input type="radio" name="role" value="teacher" checked onchange="onLoginRoleChange()"> الأستاذ / الأستاذة</label>
+      <label><input type="radio" name="role" value="admin" onchange="onLoginRoleChange()"> الإدارة</label>
+    </div>
+    <div class="field" id="loginUserField" style="margin-top:14px"><label>اسم المستخدم</label><input id="loginUser" autocomplete="username"></div>
+    <div class="field" id="loginPassField" style="margin-top:14px"><label>كلمة المرور</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <div id="loginError" class="error" style="margin-top:8px"></div>
+    <button class="btn primary" style="width:100%;margin-top:8px" onclick="login()">دخول</button>
+
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header class="top">
+  <div class="brand"><div class="mark">🏫</div><div><h1>نظام تقارير سلوك التلاميذ</h1><p id="userRoleText"></p></div></div>
+  <div class="userbox"><span id="currentUser" style="font-weight:700;font-size:13px"></span><button class="logout" onclick="logout()">خروج</button></div>
+</header>
+
+<main class="container">
+  <div id="teacherView" class="hidden">
+    <div class="notice" id="successNotice">تم إرسال التقرير بنجاح.</div>
+    <div class="card accent-top">
+      <h2>تسجيل تقرير سلوك</h2>
+
+      <div class="section-title">معلومات الأستاذ</div>
+      <div class="grid">
+        <div class="field"><label>الأستاذ / الأستاذة *</label>
+          <select id="teacherName" onchange="onProfessorChange()">
+            <option value="">-- اختر الأستاذ / الأستاذة --</option>
+          </select>
+        </div>
+        <div class="field"><label>المادة</label><input id="teacherSubject" readonly placeholder="تظهر تلقائياً بعد اختيار الأستاذ"></div>
+      </div>
+
+      <div class="section-title">اختيار القسم والتلاميذ</div>
+      <div class="section-hint">يمكن اختيار تلميذ واحد أو عدة تلاميذ.</div>
+      <div class="grid">
+        <div class="field"><label>القسم *</label>
+          <select id="className" onchange="loadStudentsByClass()">
+            <option value="">-- اختر القسم أولاً --</option>
+          </select>
+          <span class="muted">يتم عرض الأقسام المرتبطة بالأستاذ فقط.</span>
+        </div>
+        <div class="field">
+          <label>التلاميذ *</label>
+          <div class="students-box">
+            <div class="students-list" id="studentsList">
+              <div class="students-empty">اختر القسم أولاً لعرض التلاميذ</div>
+            </div>
+            <div class="students-count" id="studentsCount">لم يتم اختيار أي تلميذ</div>
+          </div>
+        </div>
+      </div>
+      <div id="dataStatus" class="muted" style="margin-top:10px"></div>
+
+      <div class="hidden" aria-hidden="true">
+        <input id="incidentDate" type="hidden">
+        <input id="incidentTime" type="hidden">
+      </div>
+
+      <div class="section-title">سبب السلوك *</div>
+      <div class="checks" id="reasons">
+        <label class="check"><input type="checkbox" value="التأخر عن الحصة">التأخر عن الحصة</label>
+        <label class="check"><input type="checkbox" value="الغياب المتكرر">الغياب المتكرر</label>
+        <label class="check"><input type="checkbox" value="عدم الانضباط داخل القسم">عدم الانضباط داخل القسم</label>
+        <label class="check"><input type="checkbox" value="التشويش وإزعاج الآخرين">التشويش وإزعاج الآخرين</label>
+        <label class="check"><input type="checkbox" value="عدم إنجاز الواجبات والأنشطة">عدم إنجاز الواجبات والأنشطة</label>
+        <label class="check"><input type="checkbox" value="استعمال الهاتف أو جهاز إلكتروني دون ترخيص">استعمال الهاتف أو جهاز إلكتروني دون ترخيص</label>
+        <label class="check"><input type="checkbox" value="مخالفة النظام الداخلي للمؤسسة">مخالفة النظام الداخلي للمؤسسة</label>
+        <label class="check"><input type="checkbox" value="العنف اللفظي">العنف اللفظي</label>
+        <label class="check"><input type="checkbox" value="العنف الجسدي">العنف الجسدي</label>
+        <label class="check"><input type="checkbox" value="عدم احترام الأستاذ أو الموظفين">عدم احترام الأستاذ أو الموظفين</label>
+        <label class="check"><input type="checkbox" value="عدم احترام زملاء الدراسة">عدم احترام زملاء الدراسة</label>
+        <label class="check"><input type="checkbox" value="التخريب أو إتلاف ممتلكات المؤسسة">التخريب أو إتلاف ممتلكات المؤسسة</label>
+        <label class="check"><input type="checkbox" value="الغش">الغش</label>
+        <label class="check"><input type="checkbox" value="أخرى">أخرى</label>
+      </div>
+      <div class="field" style="margin-top:10px"><label>سبب آخر (اختياري)</label><input id="otherReason"></div>
+
+      <div class="section-title">تفاصيل الواقعة <span class="opt">(اختياري)</span></div>
+      <textarea id="details" placeholder="اكتب تفاصيل الواقعة إن أردت إضافة توضيح..."></textarea>
+
+      <div class="section-title">الإجراء المتخذ</div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" value="تنبيه شفهي" class="actionsCheck">تنبيه شفهي</label>
+        <label class="check"><input type="checkbox" value="توجيه ملاحظة للتلميذ" class="actionsCheck">توجيه ملاحظة للتلميذ</label>
+        <label class="check"><input type="checkbox" value="التواصل مع الإدارة" class="actionsCheck">التواصل مع الإدارة</label>
+        <label class="check"><input type="checkbox" value="التواصل مع الحراسة العامة" class="actionsCheck">التواصل مع الحراسة العامة</label>
+        <label class="check"><input type="checkbox" value="استدعاء ولي الأمر" class="actionsCheck">استدعاء ولي الأمر</label>
+        <label class="check"><input type="checkbox" value="متابعة التلميذ" class="actionsCheck">متابعة التلميذ</label>
+        <label class="check"><input type="checkbox" value="إحالة الحالة على الإدارة" class="actionsCheck">إحالة الحالة على الإدارة</label>
+        <label class="check"><input type="checkbox" value="إجراء آخر" class="actionsCheck">إجراء آخر</label>
+      </div>
+      <div class="field" style="margin-top:10px"><label>تفاصيل الإجراء</label><textarea id="actionDetails" style="min-height:80px"></textarea></div>
+
+      <div class="actions"><button class="btn primary" onclick="submitReport()">إرسال التقرير إلى الإدارة</button><button class="btn secondary" onclick="resetForm()">مسح النموذج</button></div>
+    </div>
+  </div>
+
+  <div id="adminView" class="hidden">
+    <div class="card">
+      <h2>لوحة تحكم الإدارة</h2>
+      <div class="kpis">
+        <div class="kpi"><span>إجمالي التقارير</span><b id="kTotal">0</b></div>
+        <div class="kpi"><span>تقارير هذا الأسبوع</span><b id="kWeek">0</b></div>
+        <div class="kpi"><span>عدد التلاميذ المعنيين</span><b id="kStudents">0</b></div>
+        <div class="kpi k-new"><span>الحالات الجديدة</span><b id="kNew">0</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="field"><label>القسم الأكثر تسجيلاً للتقارير</label><input id="kTopClass" readonly></div>
+        <div class="field"><label>السبب الأكثر تكراراً</label><input id="kTopReason" readonly></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:16px">الرسوم البيانية</h2>
+      <div class="charts-grid">
+        <div class="chart-card"><h3>التقارير حسب القسم</h3><div class="chart-box"><canvas id="chartByClass"></canvas></div></div>
+        <div class="chart-card"><h3>التقارير حسب الأستاذ</h3><div class="chart-box"><canvas id="chartByTeacher"></canvas></div></div>
+        <div class="chart-card"><h3>التقارير حسب المادة</h3><div class="chart-box"><canvas id="chartBySubject"></canvas></div></div>
+        <div class="chart-card"><h3>التقارير حسب سبب السلوك</h3><div class="chart-box"><canvas id="chartByReason"></canvas></div></div>
+        <div class="chart-card"><h3>تطور عدد التقارير حسب التاريخ</h3><div class="chart-box"><canvas id="chartTrend"></canvas></div></div>
+        <div class="chart-card"><h3>التقارير حسب الإجراء المتخذ</h3><div class="chart-box"><canvas id="chartByAction"></canvas></div></div>
+        <div class="chart-card"><h3>أكثر التلاميذ تكراراً في التقارير</h3><div class="chart-box"><canvas id="chartTopStudents"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filters">
+        <input id="search" placeholder="بحث: تلميذ / رقم تقرير / أستاذ" oninput="renderReports()">
+        <select id="filterClass" onchange="onFilterClassChange()"><option value="">كل الأقسام</option></select>
+        <select id="filterStudent" onchange="renderReports()" disabled><option value="">كل التلاميذ</option></select>
+        <select id="filterStatus" onchange="renderReports()"><option value="">كل الحالات</option><option>جديد</option><option>قيد المتابعة</option><option>تمت المعالجة</option><option>مغلق</option></select>
+        <input id="filterDate" type="date" onchange="renderReports()">
+      </div>
+      <div class="actions"><button class="btn secondary" onclick="resetFilters()">إعادة ضبط</button><button class="btn primary" onclick="loadReports()">تحديث البيانات</button><button class="btn success" onclick="downloadExcelByClass()">تنزيل Excel حسب الأقسام</button><span class="live" id="liveBadge" title="يتم التحديث تلقائياً كل 30 ثانية"><i></i><span id="liveText">تحديث تلقائي</span></span></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th>رقم التقرير</th><th>التاريخ</th><th>التلميذ</th><th>القسم</th><th>الأستاذ</th><th>السبب</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="reportsBody"></tbody></table></div>
+    </div>
+  </div>
+</main>
+<footer>نظام تقارير سلوك التلاميذ</footer>
+</div>
+
+<div id="modal" class="modal hidden"><div class="modalbox"><div id="modalContent"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">إغلاق</button></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* رابط Sheet2 (بيانات التلاميذ/الأقسام) - الرابط القديم يبقى كما هو */
+const API_URL_SHEET2 = "https://script.google.com/macros/s/AKfycbw200ecfACgF0l2Cv4m7cq4VrvA5O80lVRjfHJ5aCbqAu5ab-hv3hCUlL_2hrnL8qGbAA/exec?action=students";
+/* رابط Sheet3 (تخزين وقراءة تقارير السلوك) - الرابط الجديد */
+const API_URL_SHEET3 = "https://script.google.com/macros/s/AKfycbw200ecfACgF0l2Cv4m7cq4VrvA5O80lVRjfHJ5aCbqAu5ab-hv3hCUlL_2hrnL8qGbAA/exec";
+let sheet2Data=[];
+let currentStudentsInClass=[];
+const SHEET2_CACHE_TTL=5*60*1000;
+
+
+let currentRole="", reports=[], renderedReports=[];
+const STATUS_OPTIONS=["جديد","قيد المتابعة","تمت المعالجة","مغلق"];
+const DEMO_USERS={
+ teacher:{password:"1234",name:"الأستاذ(ة)",subject:""},
+ admin:{password:"1234",name:"الإدارة"}
+};
+
+function setAutomaticIncidentDateTime(date=new Date()){
+ const pad=n=>String(n).padStart(2,"0");
+ document.getElementById("incidentDate").value=`${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+ document.getElementById("incidentTime").value=`${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+setAutomaticIncidentDateTime();
+
+function onLoginRoleChange(){
+ const role=document.querySelector('input[name="role"]:checked').value;
+ const isTeacher=role==="teacher";
+ document.getElementById("loginUserField").classList.toggle("hidden",isTeacher);
+ document.getElementById("loginPassField").classList.toggle("hidden",isTeacher);
+ document.getElementById("loginError").textContent="";
+}
+
+function login(){
+ const role=document.querySelector('input[name="role"]:checked').value;
+ const u=document.getElementById("loginUser").value.trim();
+ const p=document.getElementById("loginPass").value;
+ const ok = role==="teacher" || (role==="admin" && u==="admin" && p==="1234");
+ if(ok){
+   localStorage.setItem("currentRole", role);
+   enterApp(role);
+ }else document.getElementById("loginError").textContent="بيانات الدخول غير صحيحة.";
+}
+
+
+/* ===== التحديث التلقائي (Automatique) ===== */
+const AUTO_REFRESH_ADMIN_MS=30*1000;      // لوحة الإدارة: كل 30 ثانية
+const AUTO_REFRESH_TEACHER_MS=5*60*1000;  // الأستاذ: بيانات التلاميذ كل 5 دقائق
+let autoTimer=null, refreshing=false, lastSnapshot="";
+
+function setLive(state,text){
+ const b=document.getElementById("liveBadge"), t=document.getElementById("liveText");
+ if(!b||!t) return;
+ b.classList.remove("loading","error");
+ if(state) b.classList.add(state);
+ t.textContent=text;
+}
+function clockText(){return new Date().toLocaleTimeString("ar-MA",{hour:"2-digit",minute:"2-digit",second:"2-digit",numberingSystem:"latn"})}
+
+async function silentRefreshReports(){
+ if(refreshing||!API_URL_SHEET3) return;
+ refreshing=true; setLive("loading","جارٍ التحديث...");
+ try{
+   const r=await fetch(API_URL_SHEET3+"?action=getReports");
+   const d=await r.json();
+   if(!Array.isArray(d)) throw new Error("bad data");
+   const snap=JSON.stringify(d);
+   if(snap!==lastSnapshot){
+     lastSnapshot=snap; reports=d;
+     try{localStorage.setItem("behaviorReports",snap)}catch(e){}
+     renderReports(); renderCharts();
+   }
+   setLive("","آخر تحديث: "+clockText());
+ }catch(e){ setLive("error","تعذر التحديث — إعادة المحاولة تلقائياً"); }
+ finally{ refreshing=false; }
+}
+
+async function silentRefreshStudents(){
+ if(refreshing) return; refreshing=true;
+ try{
+   const before=JSON.stringify(sheet2Data);
+   const ok=await fetchSheet2();
+   // لا نعيد بناء القوائم إذا كان الأستاذ بصدد ملء النموذج
+   const busy=document.getElementById("teacherName").value||document.getElementById("className").value;
+   if(ok && !busy && JSON.stringify(sheet2Data)!==before){
+     populateTeacherLists();
+     document.getElementById("dataStatus").textContent=`تم تحديث البيانات تلقائياً (${sheet2Data.length} سجل).`;
+   }
+ }finally{ refreshing=false; }
+}
+
+function autoRefreshTick(){
+ if(document.hidden) return;                                   // التبويب غير ظاهر
+ if(currentRole==="admin"){
+   const modalOpen=!document.getElementById("modal").classList.contains("hidden");
+   if(modalOpen||settlingIds.size||userIsSettling()) return;   // لا نقاطع المستخدم
+   silentRefreshReports();
+ }else if(currentRole==="teacher") silentRefreshStudents();
+}
+function userIsSettling(){return !!document.querySelector(".status-select.saving")}
+
+function startAutoRefresh(){
+ stopAutoRefresh();
+ const ms=currentRole==="admin"?AUTO_REFRESH_ADMIN_MS:AUTO_REFRESH_TEACHER_MS;
+ autoTimer=setInterval(autoRefreshTick,ms);
+}
+function stopAutoRefresh(){ if(autoTimer){clearInterval(autoTimer);autoTimer=null} }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&currentRole) autoRefreshTick(); });
+
+function enterApp(role){
+ currentRole=role;
+ document.getElementById("loginPage").classList.add("hidden");
+ document.getElementById("app").classList.remove("hidden");
+ document.getElementById("currentUser").textContent=DEMO_USERS[role].name;
+ document.getElementById("userRoleText").textContent=role==="teacher"?"صلاحية: إنشاء وإرسال التقارير فقط":"صلاحية: لوحة تحكم الإدارة";
+ document.getElementById("teacherView").classList.toggle("hidden",role!=="teacher");
+ document.getElementById("adminView").classList.toggle("hidden",role!=="admin");
+ if(role==="teacher"){loadTeacher();}
+ else loadAdminData();
+ startAutoRefresh();
+}
+
+function logout(){stopAutoRefresh();localStorage.removeItem("currentRole");location.reload()}
+
+function restoreSession(){
+ // تم تعطيل الدخول التلقائي عمدًا: يجب أن تظهر صفحة تسجيل الدخول دائمًا
+ // ويُطلب إدخال بيانات الدخول في كل مرة تُفتح فيها الصفحة.
+ return false;
+}
+
+onLoginRoleChange();
+restoreSession();
+
+function isSheet2CacheFresh(){
+ const cachedAt=Number(localStorage.getItem("sheet2CacheAt")||0);
+ return cachedAt>0 && Date.now()-cachedAt<SHEET2_CACHE_TTL;
+}
+
+function loadSheet2FromCache(){
+ try{
+   const cached=JSON.parse(localStorage.getItem("sheet2Cache")||"[]");
+   if(cached.length){sheet2Data=cached;return true}
+ }catch(e){}
+ return false;
+}
+
+async function fetchSheet2(){
+ try{
+   const r=await fetch(API_URL_SHEET2);
+   if(!r.ok) throw new Error("HTTP "+r.status);
+   const raw=await r.json();
+   sheet2Data=normalizeSheet2(raw);
+   localStorage.setItem("sheet2Cache", JSON.stringify(sheet2Data));
+   localStorage.setItem("sheet2CacheAt", String(Date.now()));
+   return sheet2Data.length>0;
+ }catch(e){console.error(e);return false;}
+}
+
+function populateTeacherLists(){
+ const professors=[...new Set(sheet2Data.map(x=>x.professor).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,"ar"));
+ const psel=document.getElementById("teacherName");
+ psel.innerHTML='<option value="">-- اختر الأستاذ / الأستاذة --</option>'+
+    professors.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+ populateAllClasses();
+ document.getElementById("teacherSubject").value="";
+}
+
+async function loadTeacher(){
+ const status=document.getElementById("dataStatus");
+ const hasCache=loadSheet2FromCache();
+ if(hasCache){
+   populateTeacherLists();
+   status.textContent=`تم عرض ${sheet2Data.length} سجل (من التخزين المؤقت)، جاري التحديث...`;
+ }else{
+   status.textContent="جاري جلب بيانات Sheet2...";
+ }
+ const ok=await fetchSheet2();
+ if(!ok){
+   status.textContent=hasCache
+     ? `تعذر التحديث، يتم عرض آخر بيانات محفوظة (${sheet2Data.length} سجل).`
+     : "تعذر جلب بيانات Sheet2. تأكد أن الرابط متاح ويعيد JSON.";
+   return;
+ }
+ populateTeacherLists();
+ status.textContent=`تم تحديث البيانات (${sheet2Data.length} سجل). اختر الأستاذ أولاً.`;
+}
+
+async function loadAdminData(){
+ const hasCache=loadSheet2FromCache();
+ if(hasCache) populateAdminClassFilter();
+ loadReports();
+ if(hasCache && isSheet2CacheFresh()) return;
+ const ok=await fetchSheet2();
+ if(ok) populateAdminClassFilter();
+}
+
+function populateAdminClassFilter(){
+ const classes=[...new Set(sheet2Data.map(x=>x.className).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ar"));
+ const sel=document.getElementById("filterClass");
+ sel.innerHTML='<option value="">كل الأقسام</option>'+
+   classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+
+function onFilterClassChange(){
+ const cls=document.getElementById("filterClass").value;
+ const sel=document.getElementById("filterStudent");
+ if(!cls){
+   sel.innerHTML='<option value="">كل التلاميذ</option>';
+   sel.disabled=true;
+ }else{
+   const names=[...new Set(sheet2Data.filter(x=>x.className===cls).map(x=>x.student).filter(Boolean))]
+     .sort((a,b)=>a.localeCompare(b,"ar"));
+   sel.innerHTML='<option value="">كل التلاميذ</option>'+
+     names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+   sel.disabled=names.length===0;
+ }
+ renderReports();
+}
+
+function populateAllClasses(){
+ const classes=[...new Set(sheet2Data.map(x=>x.className).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ar"));
+ const sel=document.getElementById("className");
+ sel.innerHTML='<option value="">-- اختر القسم --</option>'+
+   classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+
+function onProfessorChange(){
+ const professor=document.getElementById("teacherName").value;
+ const subjectInput=document.getElementById("teacherSubject");
+ if(!professor){
+   subjectInput.value="";
+   document.getElementById("className").value="";
+   resetStudentsList("اختر الأستاذ، ثم اختر القسم.");
+   return;
+ }
+ const subjects=[...new Set(sheet2Data.filter(x=>x.professor===professor)
+   .map(x=>x.subject).filter(Boolean))];
+ subjectInput.value=subjects.join("، ");
+ populateAllClasses();
+ document.getElementById("className").value="";
+ resetStudentsList("تم تحديد الأستاذ والمادة. اختر القسم المطلوب.");
+}
+
+function resetStudentsList(statusMsg){
+ currentStudentsInClass=[];
+ document.getElementById("studentsList").innerHTML='<div class="students-empty">اختر القسم أولاً لعرض التلاميذ</div>';
+ updateStudentsCount();
+ if(statusMsg) document.getElementById("dataStatus").textContent=statusMsg;
+}
+
+function loadStudentsByClass(){
+ const cls=document.getElementById("className").value;
+ const list=document.getElementById("studentsList");
+ if(!cls){resetStudentsList("اختر القسم لعرض تلاميذه.");return}
+
+ const rows=sheet2Data.filter(x=>x.className===cls);
+ const names=[...new Set(rows.map(x=>x.student).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ar"));
+ currentStudentsInClass=names;
+
+ list.innerHTML=names.length
+            ? names.map(n=>`<label><input type="checkbox" class="studentCheck" value="${esc(n)}" onchange="updateStudentsCount()">${esc(n)}</label>`).join("")
+   : '<div class="students-empty">لا يوجد تلاميذ مسجلون في هذا القسم</div>';
+ updateStudentsCount();
+ document.getElementById("dataStatus").textContent=`القسم ${cls}: تم العثور على ${names.length} تلميذ.`;
+}
+
+function updateStudentsCount(){
+ const n=document.querySelectorAll("#studentsList input.studentCheck:checked").length;
+ document.getElementById("studentsCount").textContent=n
+   ? `تم اختيار ${n} ${n===1?"تلميذ":"تلاميذ"}`
+   : "لم يتم اختيار أي تلميذ";
+}
+
+function normalizeSheet2(raw){
+ let rows=[];
+ if(Array.isArray(raw)) rows=raw;
+ else if(Array.isArray(raw.data)) rows=raw.data;
+ else if(Array.isArray(raw.values)){
+   const v=raw.values, h=v[0]||[];
+   rows=v.slice(1).map(a=>Object.fromEntries(h.map((k,i)=>[k,a[i]])));
+ } else if(Array.isArray(raw.rows)) rows=raw.rows;
+ return rows.map(x=>({
+   student:String(x["الاسم"]??x["اسم"]??x.name??x.student??"").trim(),
+   className:String(x["القسم"]??x.class??x.className??"").trim(),
+   professor:String(x["Professeur"]??x.professeur??x.teacher??x["الأستاذ"]??"").trim(),
+   subject:String(x["Matière"]??x.matiere??x.subject??x["المادة"]??"").trim()
+ })).filter(x=>x.student||x.className||x.professor||x.subject);
+}
+
+function selected(selector){return [...document.querySelectorAll(selector+":checked")].map(x=>x.value)}
+
+function submitReport(){
+ const now=new Date();
+ setAutomaticIncidentDateTime(now);
+ const students=selected("#studentsList input.studentCheck");
+ const cls=document.getElementById("className").value.trim();
+ const date=document.getElementById("incidentDate").value;
+ const time=document.getElementById("incidentTime").value;
+ const details=document.getElementById("details").value.trim();
+ let reasons=selected("#reasons input");
+ const other=document.getElementById("otherReason").value.trim();
+ if(other) reasons.push(other);
+
+ if(!cls||!students.length||!date||!reasons.length){
+   alert("يرجى إكمال الحقول الإلزامية: القسم، تلميذ واحد على الأقل، وسبب واحد على الأقل.");
+   return;
+ }
+
+ const groupId="GRP-"+String(Date.now()).slice(-8);
+ const baseInfo={
+   incidentDate:date, incidentTime:time,
+   className:cls, teacher:document.getElementById("teacherName").value,
+   subject:document.getElementById("teacherSubject").value, reasons:reasons.join("، "),
+   details, actions:selected(".actionsCheck").join("، "), actionDetails:document.getElementById("actionDetails").value.trim(),
+   sentAt:now.toISOString(), status:"جديد", adminNotes:""
+ };
+
+ const newReports=students.map((student,i)=>({
+   id:"RPT-"+now.getFullYear()+"-"+String(Date.now()).slice(-6)+"-"+i,
+   reportNumber:"RPT-"+now.getFullYear()+"-"+String(Date.now()).slice(-6)+"-"+i,
+   groupId:students.length>1?groupId:"",
+   student, ...baseInfo
+ }));
+
+ document.getElementById("successNotice").textContent=students.length>1
+   ? `تم إرسال التقرير بنجاح لـ ${students.length} تلاميذ.`
+   : "تم إرسال التقرير بنجاح.";
+ document.getElementById("successNotice").style.display="block";
+ resetForm(false);
+ window.scrollTo({top:0,behavior:"smooth"});
+ setTimeout(()=>document.getElementById("successNotice").style.display="none",4000);
+
+ Promise.all(newReports.map(r=>sendToAPI(r))).then(results=>{
+   const anyFailed=results.some(ok=>!ok);
+   if(anyFailed){
+     reports.unshift(...newReports.slice().reverse());
+     localStorage.setItem("behaviorReports",JSON.stringify(reports));
+   }
+ });
+}
+
+async function sendToAPI(data){
+ if(!API_URL_SHEET3)return false;
+ try{const r=await fetch(API_URL_SHEET3,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"createReport",data})});return r.ok}catch(e){return false}
+}
+
+const EXCEL_MONTHS=["شتنبر","أكتوبر","نونبر","دجنبر","يناير","فبراير","مارس","أبريل","ماي","يونيو"];
+
+function excelMonthIndex(dateValue){
+ const match=String(dateValue||"").match(/^\d{4}-(\d{2})-\d{2}/);
+ if(!match)return -1;
+ const month=Number(match[1]);
+ if(month>=9)return month-9;
+ if(month<=6)return month+3;
+ return -1;
+}
+
+function excelSheetName(className,index,usedNames){
+ const base=String(className||`قسم ${index+1}`).replace(/[\\\\/?*\\[\\]:]/g," ").trim().slice(0,31)||`قسم ${index+1}`;
+ let name=base, suffix=2;
+ while(usedNames.has(name)){
+   const tail=` (${suffix++})`;
+   name=(base.slice(0,31-tail.length)+tail).trim();
+ }
+ usedNames.add(name);
+ return name;
+}
+
+function downloadExcelByClass(){
+ if(typeof XLSX==="undefined"){
+   alert("تعذر تحميل مكتبة Excel. تحقق من الاتصال بالإنترنت ثم أعد المحاولة.");
+   return;
+ }
+ const classNames=[...new Set([
+   ...sheet2Data.map(x=>x.className),
+   ...reports.map(x=>x.className)
+ ].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+ if(!classNames.length){
+   alert("لا توجد بيانات أقسام أو تقارير لتصديرها.");
+   return;
+ }
+
+ const workbook=XLSX.utils.book_new();
+ const usedNames=new Set();
+ classNames.forEach((className,classIndex)=>{
+   const names=[...new Set([
+     ...sheet2Data.filter(x=>x.className===className).map(x=>x.student),
+     ...reports.filter(x=>x.className===className).map(x=>x.student)
+   ].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+   const rows=[
+     [`القسم: ${className}`],
+     ["التلميذ",...EXCEL_MONTHS,"المجموع"]
+   ];
+   const classTotals=new Array(EXCEL_MONTHS.length).fill(0);
+   let classGrandTotal=0;
+
+   names.forEach(student=>{
+     const counts=EXCEL_MONTHS.map((_,monthIndex)=>reports.filter(report=>
+       report.className===className &&
+       report.student===student &&
+       excelMonthIndex(report.incidentDate)===monthIndex
+     ).length);
+     const studentTotal=counts.reduce((sum,count)=>sum+count,0);
+     counts.forEach((count,index)=>classTotals[index]+=count);
+     classGrandTotal+=studentTotal;
+     rows.push([student,...counts,studentTotal]);
+   });
+
+   rows.push(["مجموع القسم",...classTotals,classGrandTotal]);
+   const worksheet=XLSX.utils.aoa_to_sheet(rows);
+   worksheet["!cols"]=[{wch:30},...EXCEL_MONTHS.map(()=>({wch:12})),{wch:14}];
+   worksheet["!merges"]=[{s:{r:0,c:0},e:{r:0,c:EXCEL_MONTHS.length+1}}];
+   XLSX.utils.book_append_sheet(workbook,worksheet,excelSheetName(className,classIndex,usedNames));
+ });
+
+ const exportDate=new Date().toISOString().slice(0,10);
+ XLSX.writeFile(workbook,`تقارير_التلاميذ_حسب_الأقسام_${exportDate}.xlsx`);
+}
+
+async function loadReports(){
+ reports=JSON.parse(localStorage.getItem("behaviorReports")||"[]");
+ renderReports();
+ renderCharts();
+ if(API_URL_SHEET3){
+  try{
+    const r=await fetch(API_URL_SHEET3+"?action=getReports");
+    const d=await r.json();
+    if(Array.isArray(d)){reports=d;lastSnapshot=JSON.stringify(d);renderReports();renderCharts();setLive("","آخر تحديث: "+clockText());}
+  }catch(e){setLive("error","تعذر التحديث")}
+ }
+}
+
+function reportTimestamp(report){
+ const sentAt=Date.parse(String(report.sentAt||""));
+ if(Number.isFinite(sentAt))return sentAt;
+ const incidentAt=Date.parse(`${report.incidentDate||""}T${report.incidentTime||"00:00"}`);
+ return Number.isFinite(incidentAt)?incidentAt:0;
+}
+
+function renderReports(){
+ const q=(document.getElementById("search").value||"").toLowerCase();
+ const cl=document.getElementById("filterClass").value;
+ const stu=document.getElementById("filterStudent").value;
+ const st=document.getElementById("filterStatus").value, dt=document.getElementById("filterDate").value;
+ const data=reports.filter(r=>(!q||[r.reportNumber,r.student,r.teacher].join(" ").toLowerCase().includes(q))&&(!cl||r.className===cl)&&(!stu||r.student===stu)&&(!st||r.status===st)&&(!dt||r.incidentDate===dt)).sort((a,b)=>reportTimestamp(b)-reportTimestamp(a));
+ renderedReports=data;
+ document.getElementById("reportsBody").innerHTML=data.length?data.map((r,i)=>`<tr><td>${esc(r.reportNumber)}</td><td>${esc(r.incidentDate)}</td><td>${esc(r.student)}</td><td>${esc(r.className)}</td><td>${esc(r.teacher)}</td><td>${esc(r.reasons)}</td><td>${statusSelectHtml(r,i)}</td><td><button class="smallbtn" onclick="viewReport(${i})">عرض</button><button class="smallbtn" onclick="printReport(${i})">طباعة</button></td></tr>`).join(""):`<tr><td colspan="8" style="text-align:center;padding:30px">لا توجد تقارير</td></tr>`;
+
+ const weekAgo=new Date(Date.now()-6*24*60*60*1000).toISOString().slice(0,10);
+
+ document.getElementById("kTotal").textContent=reports.length;
+ 
+ document.getElementById("kWeek").textContent=reports.filter(r=>r.incidentDate>=weekAgo).length;
+ document.getElementById("kStudents").textContent=new Set(reports.map(r=>r.student).filter(Boolean)).size;
+ document.getElementById("kNew").textContent=reports.filter(r=>r.status==="جديد").length;
+
+ document.getElementById("kTopClass").value=topValue(reports.map(r=>r.className));
+ document.getElementById("kTopReason").value=topValue(reports.flatMap(r=>(r.reasons||"").split("، ").filter(Boolean)));
+}
+
+function topValue(arr){
+ const counts={};
+ arr.filter(Boolean).forEach(v=>counts[v]=(counts[v]||0)+1);
+ const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+ return entries.length?`${entries[0][0]} (${entries[0][1]})`:"-";
+}
+
+function statusClass(s){return s==="جديد"?"new":s==="قيد المتابعة"?"follow":s==="تمت المعالجة"?"done":"closed"}
+
+function statusSelectHtml(r,i){
+ const opts=STATUS_OPTIONS.map(s=>`<option value="${esc(s)}" ${s===r.status?"selected":""}>${esc(s)}</option>`).join("");
+ return `<select class="status-select ${statusClass(r.status)}" data-idx="${i}" onchange="onInlineStatusChange(this)">${opts}</select>`;
+}
+
+/* تغيير الحالة مباشرة من الجدول دون الحاجة لفتح "عرض التقرير".
+   يستعمل نفس منطق saveReportStatus (تأكيد، تحديث تفاؤلي، تراجع عند الفشل، ومزامنة settlingIds
+   لمنع تعارض إن تم فتح النافذة المنبثقة لنفس التقرير في نفس الوقت). */
+async function onInlineStatusChange(sel){
+ const idx=Number(sel.dataset.idx);
+ const r=renderedReports[idx];
+ const prevStatus=r?r.status:sel.value;
+ if(!r||(!r.id&&!r.reportNumber)){
+   sel.value=prevStatus;
+   alert("لا يمكن تحديث هذا التقرير: لا يوجد معرّف صالح له في الشيت.");
+   return;
+ }
+
+ const newStatus=sel.value;
+ if(newStatus===prevStatus) return;
+ const refKey=r.id||r.reportNumber;
+ if(settlingIds.has(refKey)){ sel.value=prevStatus; return; }
+ if(!confirm(`هل تريد تغيير حالة التقرير رقم ${r.reportNumber} إلى "${newStatus}"؟`)){ sel.value=prevStatus; return; }
+
+ sel.disabled=true;
+ sel.className="status-select "+statusClass(newStatus)+" saving";
+ settlingIds.add(refKey);
+ r.status=newStatus;
+ const master=reports.find(x=>(x.id&&x.id===r.id)||(x.reportNumber&&x.reportNumber===r.reportNumber));
+ if(master) master.status=newStatus;
+ try{ localStorage.setItem("behaviorReports", JSON.stringify(reports)); }catch(e){}
+
+ try{
+   const res=await fetch(API_URL_SHEET3,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateStatus",id:r.id,reportNumber:r.reportNumber,status:newStatus})});
+   const rawText=await res.text();
+   let data;
+   try{ data=JSON.parse(rawText); }
+   catch(parseErr){ throw new Error("رد غير متوقع من الخادم (HTTP "+res.status+"): "+rawText.slice(0,200)); }
+   if(!res.ok) throw new Error("HTTP "+res.status+" - "+(data.error||rawText.slice(0,200)));
+   if(!data.ok) throw new Error(data.error||"فشل التحديث");
+   await loadReports(); // يعيد جلب البيانات المؤكدة من الشيت ويعيد رسم الجدول بالكامل
+ }catch(e){
+   r.status=prevStatus;
+   if(master) master.status=prevStatus;
+   renderReports();
+   try{ localStorage.setItem("behaviorReports", JSON.stringify(reports)); }catch(err){}
+   alert("تعذر حفظ الحالة:\n"+(e && e.message ? e.message : String(e)));
+ }finally{
+   settlingIds.delete(refKey);
+ }
+}
+
+/* ================= الرسوم البيانية ================= */
+const CHART_COLORS={
+ primary:"#1F3A5C", accent:"#B08245", info:"#175CD3", warn:"#9A5B12",
+ success:"#02724A", danger:"#B42318", gray:"#98A2B3",
+ palette:["#1F3A5C","#B08245","#175CD3","#02724A","#9A5B12","#B42318","#4A6C90","#6B7280","#8B5CF6","#0EA5E9","#DB2777","#65A30D"]
+};
+const charts={};
+
+function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key]}}
+
+function countMap(arr){const m={};arr.filter(Boolean).forEach(v=>m[v]=(m[v]||0)+1);return m}
+
+function sortedEntries(map,limit){
+ let e=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+ if(limit) e=e.slice(0,limit);
+ return e;
+}
+
+function renderCharts(){
+ loadChartLib().then(()=>{
+   hideChartsError();
+   renderBarChart("chartByClass", countMap(reports.map(r=>r.className)));
+   renderBarChart("chartByTeacher", countMap(reports.map(r=>r.teacher)));
+   renderBarChart("chartBySubject", countMap(reports.map(r=>r.subject)));
+   renderBarChart("chartByReason", countMap(reports.flatMap(r=>(r.reasons||"").split("، ").filter(Boolean))), true, 8);
+   renderTrendChart("chartTrend");
+   renderBarChart("chartByAction", countMap(reports.flatMap(r=>(r.actions||"").split("، ").filter(Boolean))), true, 8);
+   renderBarChart("chartTopStudents", countMap(reports.map(r=>r.student)), true, 10);
+ }).catch(()=>{
+   showChartsError();
+ });
+}
+
+let chartLibPromise=null;
+function loadChartLib(){
+ if(typeof Chart!=="undefined") return Promise.resolve();
+ if(chartLibPromise) return chartLibPromise;
+ const urls=[
+   "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
+   "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+ ];
+ chartLibPromise=new Promise((resolve,reject)=>{
+   (function tryNext(i){
+     if(i>=urls.length){chartLibPromise=null;reject(new Error("chart-load-failed"));return}
+     const s=document.createElement("script");
+     s.src=urls[i];
+     s.onload=()=>resolve();
+     s.onerror=()=>tryNext(i+1);
+     document.head.appendChild(s);
+   })(0);
+ });
+ return chartLibPromise;
+}
+
+function showChartsError(){
+ document.querySelectorAll(".chart-box").forEach(box=>{
+   if(box.querySelector(".chart-error")) return;
+   const div=document.createElement("div");
+   div.className="chart-error";
+   div.textContent='تعذر تحميل مكتبة الرسوم البيانية. تحقق من الاتصال بالإنترنت ثم اضغط "تحديث البيانات".';
+   box.appendChild(div);
+ });
+}
+function hideChartsError(){
+ document.querySelectorAll(".chart-error").forEach(el=>el.remove());
+}
+
+function renderBarChart(id, map, horizontal, limit){
+ const el=document.getElementById(id); if(!el) return;
+ destroyChart(id);
+ const entries=sortedEntries(map, limit);
+ charts[id]=new Chart(el,{
+   type:"bar",
+   data:{labels:entries.map(e=>e[0]), datasets:[{data:entries.map(e=>e[1]), backgroundColor:CHART_COLORS.primary, borderRadius:4, maxBarThickness:28}]},
+   options:{
+     indexAxis:horizontal?"y":"x",
+     responsive:true, maintainAspectRatio:false,
+     plugins:{legend:{display:false}},
+     scales:{
+       x:{ticks:{precision:0, font:{size:11}}, grid:{display:!horizontal}},
+       y:{ticks:{precision:0, font:{size:11}}, grid:{display:horizontal}}
+     }
+   }
+ });
+}
+
+function renderTrendChart(id){
+ const el=document.getElementById(id); if(!el) return;
+ destroyChart(id);
+ const map=countMap(reports.map(r=>r.incidentDate));
+ const dates=Object.keys(map).sort();
+ charts[id]=new Chart(el,{
+   type:"line",
+   data:{labels:dates, datasets:[{data:dates.map(d=>map[d]), borderColor:CHART_COLORS.primary, backgroundColor:"rgba(31,58,92,.12)", fill:true, tension:.3, pointRadius:3, pointBackgroundColor:CHART_COLORS.primary}]},
+   options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{precision:0, font:{size:11}}}, x:{ticks:{font:{size:10}}}}}
+ });
+}
+
+function viewReport(idx){
+ const r=renderedReports[idx];if(!r)return;
+ document.getElementById("modalContent").innerHTML=`<h2>تفاصيل التقرير ${esc(r.reportNumber)}</h2>
+ ${r.groupId?`<p class="muted">تقرير جماعي مرتبط بواقعة مشتركة: ${esc(r.groupId)}</p>`:""}
+ <div class="grid"><div><b>التلميذ:</b> ${esc(r.student)}</div><div><b>القسم:</b> ${esc(r.className)}</div><div><b>الأستاذ:</b> ${esc(r.teacher)}</div><div><b>المادة:</b> ${esc(r.subject||"-")}</div><div><b>التاريخ:</b> ${esc(r.incidentDate)}</div><div><b>الوقت:</b> ${esc(r.incidentTime||"-")}</div><div><b>الحالة:</b> ${esc(r.status)}</div></div>
+ <div class="section-title">أسباب السلوك</div><p>${esc(r.reasons)}</p><div class="section-title">تفاصيل الواقعة</div><p style="white-space:pre-wrap">${esc(r.details||"لا توجد تفاصيل إضافية")}</p><div class="section-title">الإجراء المتخذ</div><p>${esc(r.actions||"-")}</p><p style="white-space:pre-wrap">${esc(r.actionDetails||"")}</p><div class="section-title">ملاحظات الإدارة</div><p>${esc(r.adminNotes||"-")}</p>
+ <div style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+   <label style="font-size:12px;font-weight:700">تغيير الحالة:</label>
+   <select id="modalStatusSelect">${STATUS_OPTIONS.map(s=>`<option value="${esc(s)}"${s===r.status?" selected":""}>${esc(s)}</option>`).join("")}</select>
+   <button class="smallbtn" id="modalSaveBtn" onclick="saveReportStatus(${idx})">💾 حفظ</button>
+ </div>`;
+ document.getElementById("modal").classList.remove("hidden");
+}
+
+/* تسوية تقرير: يضبط status="مغلق" في Sheet3 عبر closeReport، مع تحديث تفاؤلي فوري للواجهة
+   وتراجع تلقائي عند فشل الطلب. بمجرد التسوية، لن يظهر التلميذ بعدها كـ"محال على الإدارة"
+   في index.html (انظر computeReportsInfo و REPORT_CLOSED_STATUSES هناك). */
+let settlingIds=new Set();
+/* حفظ الحالة المختارة من القائمة المنسدلة في نافذة عرض التقرير.
+   يرسل الحالة الجديدة (جديد / قيد المتابعة / تمت المعالجة / مغلق) إلى Sheet3
+   عبر action="updateStatus"، مع تحديث تفاؤلي فوري وتراجع تلقائي عند الفشل. */
+async function saveReportStatus(idx){
+ const r=renderedReports[idx];
+ if(!r||(!r.id&&!r.reportNumber)) return;
+
+ const select=document.getElementById("modalStatusSelect");
+ const newStatus=select?select.value:r.status;
+ if(newStatus===r.status){ closeModal(); return; }
+ const refKey=r.id||r.reportNumber;
+ if(settlingIds.has(refKey)) return; // يمنع الضغط المزدوج أثناء إرسال الطلب
+ if(!confirm(`هل تريد تغيير حالة التقرير رقم ${r.reportNumber} إلى "${newStatus}"؟`)) return;
+
+ const saveBtn=document.getElementById("modalSaveBtn");
+ if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent="جارٍ الحفظ..."; }
+ settlingIds.add(refKey);
+ const prevStatus=r.status;
+ r.status=newStatus;
+ const master=reports.find(x=>(x.id&&x.id===r.id)||(x.reportNumber&&x.reportNumber===r.reportNumber));
+ if(master) master.status=newStatus;
+ renderReports();
+ try{ localStorage.setItem("behaviorReports", JSON.stringify(reports)); }catch(e){}
+
+ try{
+   const res=await fetch(API_URL_SHEET3,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateStatus",id:r.id,reportNumber:r.reportNumber,status:newStatus})});
+   const rawText=await res.text();
+   let data;
+   try{ data=JSON.parse(rawText); }
+   catch(parseErr){ throw new Error("رد غير متوقع من الخادم (HTTP "+res.status+"): "+rawText.slice(0,200)); }
+   if(!res.ok) throw new Error("HTTP "+res.status+" - "+(data.error||rawText.slice(0,200)));
+   if(!data.ok) throw new Error(data.error||"فشل التحديث");
+   // إعادة المزامنة مع الشيت للتأكد أن الحالة الجديدة مسجلة فعليًا هناك
+   await loadReports();
+   closeModal();
+ }catch(e){
+   r.status=prevStatus;
+   if(master) master.status=prevStatus;
+   renderReports();
+   try{ localStorage.setItem("behaviorReports", JSON.stringify(reports)); }catch(err){}
+   alert("تعذر حفظ الحالة:\n"+(e && e.message ? e.message : String(e)));
+ }finally{
+   settlingIds.delete(refKey);
+   if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent="💾 حفظ"; }
+ }
+}
+
+function formatReportDateTime(r){
+ const ts=Date.parse(r.sentAt||"");
+ if(Number.isFinite(ts)){
+   try{
+     const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Casablanca",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date(ts));
+     const get=t=>parts.find(p=>p.type===t)?.value||"";
+     return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
+   }catch(e){}
+ }
+ return r.incidentDate||"-";
+}
+
+function printReport(idx){
+ const r=renderedReports[idx];if(!r)return;
+ const w=window.open("","_blank");
+ if(!w){alert("المتصفح منع فتح نافذة الطباعة. الرجاء السماح بالنوافذ المنبثقة (popups) لهذا الموقع ثم إعادة المحاولة.");return}
+ w.document.write(`<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${r.reportNumber}</title><style>
+@page{size:A4;margin:9mm}
+*{box-sizing:border-box}
+body{font-family:Tahoma,Arial,sans-serif;padding:0;line-height:1.5;font-size:12.5px;color:#111}
+h1{text-align:center;font-size:17px;margin:6px 0 10px}
+h3{font-size:13px;margin:8px 0 4px}
+table{width:100%;border-collapse:collapse}
+td{border:1px solid #999;padding:5px 7px;font-size:12px}
+.title{font-weight:bold;width:22%;background:#f4f4f4}
+.box{border:1px solid #999;padding:8px 10px;min-height:38px;font-size:12px;page-break-inside:avoid}
+.sig{margin-top:14px}
+.sig td{height:55px;vertical-align:bottom;text-align:center;font-weight:bold}
+</style></head><body>
+<h1>تقرير حول سلوك تلميذ</h1>
+<table>
+<tr><td class="title">رقم التقرير</td><td>${esc(r.reportNumber)}</td><td class="title">التاريخ</td><td>${esc(formatReportDateTime(r))}</td></tr>
+<tr><td class="title">التلميذ</td><td>${esc(r.student)}</td><td class="title">القسم</td><td>${esc(r.className)}</td></tr>
+<tr><td class="title">الأستاذ</td><td>${esc(r.teacher)}</td><td class="title">المادة</td><td>${esc(r.subject||"-")}</td></tr></table>
+<h3>أسباب السلوك</h3><div class="box">${esc(r.reasons)}</div>
+<h3>تفاصيل الواقعة</h3><div class="box">${esc(r.details||"لا توجد تفاصيل إضافية").replace(/\n/g,"<br>")}</div>
+<h3>الإجراء المتخذ</h3><div class="box">${esc(r.actions||"-")}<br>${esc(r.actionDetails||"")}</div>
+<table class="sig"><tr><td>توقيع الأستاذ(ة)</td><td>توقيع ولي أمر التلميذ</td></tr><tr><td></td><td></td></tr></table>
+<script>window.print()<\/script></body></html>`);w.document.close()
+}
+
+function closeModal(){document.getElementById("modal").classList.add("hidden")}
+
+function resetForm(clearDate=true){
+ ["incidentTime","otherReason","details","actionDetails"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("className").value="";
+ document.getElementById("teacherName").value="";
+ document.getElementById("teacherSubject").value="";
+ resetStudentsList();
+ if(sheet2Data.length) populateAllClasses();
+ document.querySelectorAll("#reasons input,.actionsCheck").forEach(x=>x.checked=false);
+ if(clearDate)setAutomaticIncidentDateTime();
+}
+
+function resetFilters(){
+ document.getElementById("search").value="";
+ document.getElementById("filterDate").value="";
+ document.getElementById("filterStatus").value="";
+ document.getElementById("filterClass").value="";
+ onFilterClassChange();
+}
+
+function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+</script>
+</body>
+</html>
